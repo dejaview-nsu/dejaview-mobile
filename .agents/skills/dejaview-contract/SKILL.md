@@ -1,28 +1,14 @@
 ---
 name: dejaview-contract
-description: Согласованно изменить общий интерфейс DejaView между разработчиками, маршруты, события, модели и DI с миграцией всех потребителей.
+description: Change shared DejaView interfaces, routes and events with compatible migration of all consumers. Use for cross-feature contracts.
 ---
 
-# Изменение общего контракта
+# Contract
 
-Прочитать docs/planning/contracts.md и таблицу владельцев AGENTS.md. Уточнить проблему реального UC, а не строить универсальный интерфейс для возможного будущего. Изменение существующего контракта допустимо в пределах порученной задачи; обычные обратимые правки не требуют повторного разрешения пользователя.
+Read contracts.md and owners. Search definition, all implementations/Fakes, DI bindings, previews/tests and call sites. Specify old-to-new behavior, null/unknown semantics, success/error/cancel and event scope. Avoid duplicate local models to bypass shared ownership.
 
-## Перед изменением
+Make the smallest justified interface change. Update interface and Fake together, migrate all consumers and real bindings, then docs. If temporary compatibility is needed, name the adapter owner and removal task; do not leave two sources of truth. Routes carry IDs, not secrets, URI or large DTOs.
 
-Найти определение, реализации, Fake, DI binding и всех потребителей через поиск символа и зависимостей. Записать минимальный список затронутых модулей и владельца. Не создавать почти одинаковую модель в своей feature, чтобы обойти общий интерфейс.
+Preserve single search-history writer/request deduplication, shared session state and consistent list/card state. Late responses cannot cross account scopes. Test consumer scenarios and compile affected demo/prod variants, not only the interface module.
 
-Для каждого поля определить nullable/unknown, для операции — success/error/cancel, для события — scope/повторяемость и время жизни. Указать изменения поведения: например, неизвестная rating отличается от null после подтверждённого GET. DTO и Android types остаются за границей domain.
-
-## Порядок миграции
-
-1. Сформулировать старое → новое поведение и пример вызова потребителя.
-2. Изменить интерфейс и Fake в одном согласованном diff. Если нужна совместимость на время нескольких PR, переходный адаптер имеет владельца и задачу удаления; не оставлять две истины.
-3. Мигрировать реализации, все call sites, DI, preview и тесты. Routes передают ID, не пароли, cookie, URI или большие JSON.
-4. Обновить contracts.md и карточки, если меняются обязанности/сроки. Владелец общего файла координирует merge; ревью потребителя требуется командным процессом, не имитируется агентом.
-5. Собрать затронутые demo/prod конфигурации и проверить значимый межфичевый сценарий. Проверка только интерфейсного модуля недостаточна.
-
-## Инварианты интеграции
-
-SearchCompletion принимает общая оболочка; история пишется один раз по requestId. Cookie/session имеет один владелец. PersonalMoviesRepository уведомляет карточку и список об одном подтверждённом состоянии. 401 invalidation не навигирует из interceptor. Logout очищает account scope; поздние ответы прошлого scope не восстанавливают его.
-
-Если часть потребителей ещё не существует, предоставить компилируемый контракт/Fake и точный пример подключения, не объявлять интеграцию состоявшейся. Передача содержит список мигрированных потребителей, проверенные сценарии, оставшиеся PR и порядок их объединения.
+Human review by an affected consumer is desirable, not a mandatory gate for this mobile project. Absent review requires explicit self-review/test evidence, not fabricated approval or waiting indefinitely. If consumers do not yet exist, provide a compileable contract/Fake/example and mark integration unverified. Update owner cards when responsibilities change.

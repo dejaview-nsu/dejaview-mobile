@@ -1,30 +1,16 @@
 ---
 name: dejaview-media
-description: Реализовать или исправить поиск DejaView по изображению, видео и аудио, включая выбор файлов, запись, обработку и очистку ресурсов.
+description: Implement DejaView image/video/audio import, recording, upload and resource cleanup. Use for file providers, media processing and search modes.
 ---
 
-# Медиа и поиск
+# Media
 
-Вход: карточка UC-07/08/09/10, включённые альтернативы, contracts.md MediaStore/SearchCompletion, выбранный endpoint. Crop/trim/Share/Worker не входят в первый спринт автоматически. Проверить существующий importer прежде чем делать собственный.
+Read contracts.md MediaStore/SearchCompletion and the modality UC. Reuse existing media libraries/importer; use dependencies before adding codecs, trimming or transformations. Camera/crop/trim/share/background work are not automatically in sprint scope.
 
-## Жизненный цикл
+Content URI is not a filesystem path. Stream into private temp with a byte limit while reading; provider MIME/size/name are untrusted. Validate nonempty content, format and duration. Unknown duration is not zero. Limits are image 10 MiB; video 50 MiB/30000 ms; audio 20 MiB/10000 ms. Validate transformed output too.
 
-Зафиксировать состояния Idle/Preparing/Ready/Uploading/Processing/Completed/Failed/Cancelled и владельца draft. Picker предоставляет content URI, не локальный путь. Копировать поток во внутренний temp с лимитом во время чтения; закрывать input/output при ошибке и отмене. Недостоверные provider size/MIME и отсутствующее имя допустимы как вход, но не как повод обходить валидацию.
+Define draft ownership through preparation/upload/error/success/cancel. Retain a valid draft for explicit retry after a network error; release on replacement, cancellation and success. Close all streams/calls/players/recorders; startup cleans abandoned temporary files. History retains metadata, not originals. Durable background work requires separate ownership/TTL.
 
-Общие пределы: image 10 MiB, video 50 MiB и 30 000 мс, audio 20 MiB и 10 000 мс; 1 MiB = 1 048 576 байт. Проверять фактическое содержимое и длительность, не расширение и округлённый таймер. Файлы нулевой длины, повреждение, неизвестная длительность и codec error не считаются Ready. Для trim проверяется выходной фрагмент, а не только исходный файл.
+Upload progress measures bytes; processing has no fake percentage. Request IDs suppress late completion. Only shell writes history. Request microphone permission on recording, preserve picker fallback after denial, release recorder when leaving. An M4A suffix does not prove AAC/container correctness.
 
-Перезапись/замена/успех/отмена освобождают предыдущий temp. После network failure доступный draft остаётся для ручного retry. История хранит метаданные, не оригинал. Для pending Worker нужен отдельный durable owner/TTL; обычный cache не гарантирует сохранность.
-
-## Реализация режима
-
-- Режим отдаёт UI entrypoint и completion; навигация/история принадлежат оболочке. requestId исключает старый результат и дубли.
-- Upload percentage отражает байты. Processing отдельный, без выдуманного процента. Cancel отменяет HTTP/decoder/transformer и запрещает поздний completion.
-- Микрофон запрашивается при записи; отказ оставляет file picker. M4A означает настоящий AAC/контейнер. На уходе recorder/player освобождаются, скрытая фоновая запись не продолжается.
-- Camera denied допускает галерею. Share принимает URI с grant; текстовый URL соцсети не является видео. Multiple files требуют выбора, не незаметной отправки всех.
-- Frame/audio extraction не создают feature-to-feature импорт: результат передаётся контрактом через coordinator.
-
-## Проверки
-
-Проверить лимит −1/ровно/+1 байт и миллисекунда, revoked URI, unknown metadata, неподдерживаемый codec, OOM-risk большого файла, нехватку места, cancel во время копирования/upload, смену режима, поворот и logout. Пройти несколько поисков подряд и проверить отсутствие temp/player/recorder утечек.
-
-Запись и playback проверить на физическом устройстве; файловый lifecycle — на content provider. В отчёте разделить emulator/unit и device результаты. Для репозитория использовать синтетические fixtures; оригиналы и экранные записи остаются приватными.
+Automate limit boundaries, revoked URI, unknown metadata, corrupt codec, disk exhaustion, cancel during copy/upload, rotation and account changes. Test actual provider and recorder/playback paths on device/emulator where supported; label remaining hardware checks precisely. Never commit users' media as fixtures.

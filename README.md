@@ -16,6 +16,6 @@
 - [Следующие этапы](docs/planning/phase-2.md)
 - [Фактическая реализация backend](docs/planning/backend-evidence.md)
 - [Дизайн: 88 фреймов, токены и приватный экспорт](docs/design/README.md)
-- [Работа с агентами и девять skills](docs/agents.md)
+- [Работа с агентами, промпты и 13 skills](docs/agents.md)
 - [Конфиденциальность и проверки](docs/privacy.md)
 - [Статус подготовки и оставшиеся действия](docs/preparation-status.md)

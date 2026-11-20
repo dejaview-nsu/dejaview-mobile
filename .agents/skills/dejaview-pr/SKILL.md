@@ -1,28 +1,16 @@
 ---
 name: dejaview-pr
-description: Подготовить и проверить изменение DejaView к ревью, оценить регрессию, границы задачи, privacy и доказательства готовности без автоматической публикации.
+description: Self-review and prepare a small verified DejaView change for handoff or an authorized PR. Use after implementation and before publication.
 ---
 
-# Проверка перед передачей
+# Pr
 
-Прочитать текущую карточку Dev, acceptance.md, AGENTS.md и git diff/status. Проверять итоговый scope, а не первоначальное намерение. Не отменять чужой diff, не форматировать несвязанные файлы и не удалять тест ради зелёной проверки.
+Inspect final diff/status against the task AC, not merely the original plan. One PR should deliver one coherent behavior or prerequisite, normally about 200–500 authored changed lines; generated files/fixtures are separate. Larger changes need a split or concrete cohesion explanation, not arbitrary file-count gaming. No unrelated formatting, dependency upgrades or cleanup.
 
-## Проверка поведения
+Run code-style/testing for code. Verify dependency direction, MVVM state ownership, cancellation, DI isolation and real adapter evidence. Review the tests for meaningful assertions and coverage of included alternatives. Inspect skipped/zero-test reports and screenshot changes. Check privacy and unexpected tracked artifacts.
 
-Сопоставить UC и критерии приёмки с кодом. Проверить success, meaningful error, cancel и восстановление состояния для изменённого flow. Отдельно проверить интеграционные границы: auth return, stale request, общая история, list/rating refresh, logout cleanup. Для небольшого изменения не создавать тесты, которые лишь повторяют реализацию; использовать минимальную значимую регрессию.
+Use python scripts/quality_gate.py --scope repository before scaffold; Android changes require --scope android after its real commands are configured. For UI, run relevant device/screenshot tests too. A passing repository gate is not an Android build. Never weaken checks or label unavailable checks passed.
 
-Проверить module ownership, направление dependencies и единственность DI binding. Production не использует Fake/test fixtures. Зафиксировать реальную схему API и существование пути в backend. Приватные ответы сервера и секреты не логируются. Нет подавления CancellationException или catch-all, превращающего сбой в успешный пустой ответ.
+Review your own change in a separate pass with tests/results in view. Human review is recommended; lack of reviewer does not block local completion or imply automatic merge. Do not message people, publish, push or merge unless that action is authorized. Report absent review plainly.
 
-## Команды
-
-До создания Android scaffold выполнить python scripts/validate_repo.py, python scripts/privacy_check.py и python -m unittest discover -s scripts/tests. Дизайн-инструменты проверяются их node tests. Это проверки документации/инструментов, не Android.
-
-После scaffold сначала узнать существующие Gradle tasks. Запустить компиляцию/test/lint затронутых модулей и используемые demo/prod variants; при UI выполнить целевой emulator/device сценарий. Не записывать выдуманные команды как выполненные. Если зависимость стенда недоступна, локальные тесты остаются полезными, но live-приёмка открыта.
-
-Перед staging просмотреть список файлов, diff --check и privacy. После staging повторить privacy --staged. Не добавлять .local, credentials, screenshots с настоящими данными или случайный lockfile другого проекта.
-
-## Передача
-
-Описание PR начинает с конкретного поведения до/после, затем UC/scope, проверки и существенные ограничения. Назначить фактического владельца и ревьюера по командному процессу; не утверждать, что ревью уже получено. Не отправлять сообщения людям без поручения. Commit/push/merge/deploy выполняются только если входят в текущую авторизацию; готовый локальный diff сам по себе этого не означает.
-
-Итог содержит реальные результаты проверок и внешние зависимости. Незакрытый rating API, отсутствие PNG или smoke не прятать под общей формулировкой «всё готово».
+PR description: concrete before/after behavior, task/UC or chat criteria (no Redmine required), AC-to-test evidence, affected contracts/dependencies and material limitations. Link sanitized evidence only. Before staging inspect diff; afterwards run privacy --staged. Handoff states completed criteria, actual commands and remaining blockers; no invented approvals or guarantees.

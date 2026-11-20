@@ -1,32 +1,18 @@
 ---
 name: dejaview-auth
-description: Реализовать или проверить авторизацию DejaView, cookie-сессию, logout, CAPTCHA, App Links и мобильный OIDC без утечек и гонок состояния.
+description: Implement or review DejaView cookie sessions, login, CAPTCHA, logout and mobile identity flows. Use for authentication and account isolation changes.
 ---
 
-# Авторизация DejaView
+# Auth
 
-Прочитать session contract, соответствующий UC и backend-evidence.md. В main есть password auth и browser OIDC; Android exchange из мобильного Swagger отдельно не подтверждён. Не считать браузерную cookie автоматически доступной OkHttp.
+Read session contract and current backend evidence. Browser OIDC exists; native exchange is a separate contract. Browser cookies do not automatically reach OkHttp. Reuse established security/platform libraries, never implement cryptographic primitives.
 
-## Cookie и состояние
+Use one CookieStore/SessionReader with host/domain/path/secure/expiry scope. Keystore protects encryption keys; plain DataStore is not encrypted storage. Do not persist passwords. Restore checks session; network failure does not authenticate an unknown session. Loss of key/corrupted storage must fail safely.
 
-Одна реализация CookieStore/SessionReader обслуживает все фичи. Сохранять host/domain/path/secure/expiry; исключить сторонние hosts. DataStore без шифрования не защищает cookie — ключ Keystore, зашифрованное значение на диске, корректная реакция на потерю ключа. Пароль не сохраняется.
+Protected 401 invalidates session once; login 400/403 may mean credentials, CAPTCHA or unconfirmed account. Interceptor never navigates. Logout clears local personal state even if server logout fails and reports that failure. Session generation prevents late responses/Set-Cookie from restoring the old account.
 
-State: Initializing, Guest, Authenticated. Restore проверяет session; network error не подтверждает действительность неизвестной сессии. Logout локально очищает сессию и personal state даже при серверном сбое, который отображается отдельно. Session generation/cancellation не позволяет позднему Set-Cookie старого запроса вернуть авторизацию.
+Current session JSON lacks stable user_id; do not use mutable username as permanent history identity. Respect agreed session namespace. PendingAction records desired state, executes once after success and is removed on cancel. Media requires reconfirmation. No secrets in routes/SavedState/logs.
 
-401 защищённого запроса изменяет state один раз. 400/403 login могут быть invalid credentials, CAPTCHA, blocked/unconfirmed. Interceptor не открывает Activity. UI навигирует по конкретному защищённому действию; публичная карточка остаётся доступной гостю.
+CAPTCHA uses a fresh token, allowlisted origin and minimal bridge. Do not bypass it for demo. Reset/registration links handle expiry/reuse/cancel. Native OIDC requires agreed state/PKCE, callback allowlist and one-time native exchange; provider secret stays server-side.
 
-Серверный user_id есть внутри backend, но пока не выдаётся session response. Не использовать изменяемый username как стабильный owner history. Сохранять согласованный session namespace; для cross-login history/Worker требуется отдельный стабильный ID.
-
-## Потоки входа
-
-PendingAction содержит desired state, а не toggle. Success выполняет действие один раз, cancel удаляет pending. Медиа возвращается к подтверждению, не отправляется без нового нажатия. Секреты не входят в routes/SavedState.
-
-CAPTCHA определяется ответом сервера; свежий token на попытку, allowlisted page/origin и минимальный bridge. Не отключать защиту для демонстрации. Lock основан на Retry-After, не на счётчике клиента.
-
-Для регистрации/reset проверять все альтернативы UC: одноразовая ссылка, expiry, повтор письма, browser fallback. Для OIDC — state + PKCE, callback allowlist, exchange одноразового кода native HTTP, pending cookie, complete/link. Секрет provider остаётся на сервере. Неподтверждённый endpoint блокирует только зависимый поток, не остальные задачи.
-
-## Проверки
-
-Устройство: cold start, expires, corrupted storage/key, logout while request, concurrent 401, другой аккаунт, back stack после выхода. HTTP: Set-Cookie и последующий session, host/path scope, late response. CAPTCHA: valid/invalid/cancel/429. OIDC: wrong state/verifier, expired/reused code, cancellation и два типа pending.
-
-Без credentials/домена отметить live проверку как непроведённую, продолжить deterministic Fake/unit. Не писать token/cookie/email/пароль в отчёт, screenshot публичного PR или CI artifact. Перед передачей выполнить privacy-check.
+Automate concurrent 401, late Set-Cookie, expiry, corrupted storage, logout during request, account switching and pending action duplication. Check platform storage and real auth flow separately when environment permits. Missing live credentials leaves that check NOT RUN, not a fake successful login.

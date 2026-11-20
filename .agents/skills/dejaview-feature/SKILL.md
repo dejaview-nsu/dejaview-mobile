@@ -1,28 +1,14 @@
 ---
 name: dejaview-feature
-description: Реализовать сценарий UC или Compose-экран DejaView с ViewModel, состоянием, Fake и проверками. Применять к продуктовым изменениям мобильного приложения.
+description: Implement a DejaView UC or Compose screen with MVVM state, real/demo adapters and regression tests. Use for product behavior changes.
 ---
 
-# Вертикальная фича DejaView
+# Feature
 
-## Контекст и границы
+Read the role card, coverage matrix and relevant UC; distinguish the reduced sprint scope from the full PDF MVP. Use pipeline, code-style and testing. For UI, use design to resolve the actual frame before layout; do not assume a reference screen already exists.
 
-Прочитать карточку dev-N, coverage.md и исходный UC в docs/planning/sources/requirements-extract.md. Записать, какой основной путь и какие альтернативы входят в текущий этап. PDF содержит более широкий MVP: не реализовывать все соседние сценарии автоматически. Screen IDs проверить по docs/design/screen-map.md, а не только по PDF.
+Define one immutable UiState and user actions, including unknown/loading/empty/error distinctions. Separate Content from route/VM wiring. ViewModel depends on domain contracts; data adapters own DTO mapping. Use cases contain meaningful business rules rather than mandatory forwarding boilerplate.
 
-Проверить имеющийся эталон и reusable components. Если его нет, явно создать минимальный образец в согласованном модуле. Не предполагать, что «как в search-text» уже существует.
+Create deterministic Fake scenarios with synthetic data and a real adapter selected explicitly by DI. Production never silently switches to Fake. Navigation carries small IDs. Side effects have defined delivery/acknowledgement semantics across collector recreation; test pending actions and Back/cancel. Request IDs or equivalent ordering prevent stale responses and duplicate completion.
 
-## Построить поведение
-
-1. Описать один UiState с данными, состоянием загрузки/ошибки и доступностью действий. Unknown/не загружено не равно empty/false/0. Одно onAction принимает действия пользователя; state наружу read-only.
-2. ViewModel зависит от domain interfaces. Не читать Context/DAO/Retrofit напрямую. UseCase выделять при наличии правила, а не для простого делегирования одного метода.
-3. Реализовать детерминированный Fake: success, empty, invalid input, network failure и нужное изменение сессии. Данные синтетические; delay управляется тестовым scheduler.
-4. Создать stateless Content(state, onAction) и отдельную route/VM обвязку. UI использует core/ui и strings. Запрос не стартует при каждой recomposition; collect привязан к lifecycle.
-5. Для сетевой части использовать выбранный API-baseline, а не новый контракт из воображения. Новый adapter проверять как в dejaview-api.
-6. Навигация передаёт ID, не большие DTO/медиа. Back/cancel/pending action должны иметь наблюдаемую семантику. Эффекты не должны теряться или повторяться при пересоздании collector; выбрать state acknowledgement либо ограниченный event channel с тестом поведения.
-7. Старый ответ отменённого/заменённого request не меняет новый UI. CancellationException не перехватывать как пользовательскую ошибку.
-
-## Приёмка
-
-Проверить основной путь и включённые альтернативы через публичное состояние ViewModel: invalid input не вызывает repository, двойное нажатие не дублирует mutation, retry возвращает в рабочее состояние, поздний ответ игнорируется. Проверить поворот/возврат и empty/offline/error на экране. Для persistence/permissions/media добавить устройство, одного unit-теста недостаточно.
-
-Выход: сценарий, файлы, owner, включённые и отложенные альтернативы UC, реальные команды тестов, скриншот только в приватном артефакте. Не закрывать весь UC, если выполнена только включённая часть спринта. Не править чужой код без объяснённой необходимости; минимальную миграцию общего контракта выполнять совместно с потребителями.
+Integrate through existing contracts: only search shell records history, personal movie changes reach both list/card, and session invalidation is shared. Implement included alternative flows, not merely a happy screenshot. Verify main/error/cancel/restoration behavior and UI semantics. The result names completed AC, tests and intentionally deferred alternatives; partial UC completion is not the entire UC.

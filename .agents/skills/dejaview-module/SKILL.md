@@ -1,27 +1,14 @@
 ---
 name: dejaview-module
-description: Создать или изменить Gradle-модуль DejaView Android, его варианты demo/prod и DI. Использовать для скелета и модульной конфигурации, а не для обычной вёрстки экрана.
+description: Create or modify DejaView Gradle modules, source sets, build variants and DI. Use for scaffold and build configuration.
 ---
 
-# Модули DejaView
+# Module
 
-## Определить изменение
+Read the owner task and docs/planning/contracts.md. Inspect wrapper/settings/catalog/convention plugins before editing. Dev 1 owns root wiring; coordinate the smallest necessary migration without waiting for redundant approval.
 
-Прочитать AGENTS.md, карточку задачи и docs/planning/contracts.md. Проверить наличие wrapper, settings, version catalog, convention plugins и существующего аналога. Если приложение ещё не создано, выполнить только согласованный скелет D1-01; планируемые классы не являются существующим образцом.
+At scaffold, establish MVVM presentation/domain/data/di packages, compatible pinned toolchain, demo/prod variants and compileable interface entrypoints. Do not create empty per-layer Gradle modules or boilerplate use cases. Domain must remain independent of Android adapters; dependency graph is acyclic. App wires feature implementations; feature-to-feature implementation dependencies are forbidden.
 
-Владелец root Gradle/app — Dev 1. Выявить, какие строки settings/app wiring нужны до работы в feature. Уложить регистрацию модуля и stub entrypoint в одно небольшое изменение, чтобы другие владельцы не делали несовместимые сборки.
+Use dejaview-dependencies for toolchain/library selection. Register verified quality tasks in config/quality-gate.json as described in docs/testing.md. Add real formatter, lint/static analysis, unit tests, coverage and dependency-boundary checks. Compile both variants and validate unique Hilt bindings. Production must not depend on core/testing or demo source sets.
 
-## Реализация
-
-1. Проверить совместимость фактических JDK/AGP/Kotlin/KSP/Compose/Hilt. Фиксировать версии в существующем каталоге; не брать «latest», не обновлять весь стек ради одного модуля.
-2. В feature создать presentation/domain/data/di, но не пустые UseCase/manager/interface ради шаблона. Доменная логика и медленные зависимости обосновывают отдельный интерфейс.
-3. Feature зависит от core/contracts/model и нужного транспорта, search modality — также search-api. App связывает реализации. Проверить, что dependency graph не имеет цикла.
-4. Согласовать backend flavor dimension. Demo bindings и prod bindings взаимоисключающие; release prod не зависит от test fixtures. Production source sets не импортируют core/testing.
-5. Stub должен собираться и явно показывать незавершённую функцию. Fake реализует семантику контрактов, а не случайные значения. Скрытый fallback сети запрещён.
-6. Manifest entries добавлять только требуемые задачей; content providers не экспортировать случайно. На старте не требовать permissions камеры/микрофона для всех экранов.
-
-## Проверка
-
-Получить список реальных Gradle tasks. Собрать модуль и приложение для demo/prod; проверить Hilt на дублирующиеся bindings и ссылки на отсутствующие source sets. Если SDK отсутствует, указать это как непроведённую проверку, не создавать фиктивный wrapper/task-success.
-
-Проверить diff root files: только заявленные dependencies, plugins и registration. Обновить описание модуля и команды в задаче. В результате перечислить entrypoint, публичный контракт, owner и выполненную сборку. Следующий экран должен подключаться без изменения общей архитектуры.
+Discover actual Gradle tasks rather than guessing variant names. A missing SDK or wrapper cannot be replaced by a script that reports success. For the initial scaffold, include an emulator smoke and prove that a representative violating dependency/test fails the gate. Add only needed manifest permissions/exported components. Keep build outputs ignored and retain the trusted Gradle wrapper through a narrow reviewed artifact policy, not a general binary allowlist.

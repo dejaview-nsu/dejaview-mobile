@@ -33,8 +33,8 @@ def validate(root):
             if not re.search(r'^description: .{20,}$', header[1], re.M):
                 errors.append(f'{name}: missing usable description')
     skills = list((root / '.agents/skills').glob('*/SKILL.md'))
-    if len(skills) != 9:
-        errors.append('Expected nine project skills; update this invariant when the set changes')
+    if len(skills) != 13:
+        errors.append('Expected thirteen project skills; update this invariant when the set changes')
     catalog = json.loads((root / 'docs/design/screens.json').read_text(encoding='utf-8'))['frames']
     ids = [frame['nodeId'] for frame in catalog]
     if len(ids) != len(set(ids)):

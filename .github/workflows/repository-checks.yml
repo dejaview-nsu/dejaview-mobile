@@ -13,9 +13,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python scripts/validate_repo.py
-      - run: python scripts/privacy_check.py
-      - run: python -m unittest discover -s scripts/tests
       - run: npm ci --prefix tools/design --ignore-scripts --no-audit --no-fund
-      - run: npm test --prefix tools/design
-      - run: node --test tools/figma-export/export.test.mjs
+      - run: python scripts/quality_gate.py

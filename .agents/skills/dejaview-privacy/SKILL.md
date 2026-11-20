@@ -1,25 +1,16 @@
 ---
 name: dejaview-privacy
-description: Проверить и обезличить материалы DejaView перед Git, PR или передачей, включая документы, fixtures, логи и выгрузки Figma.
+description: Sanitize and verify DejaView documents, fixtures, logs and design exports before Git or sharing. Use for public artifacts and sensitive data handling.
 ---
 
-# Конфиденциальность
+# Privacy
 
-Прочитать docs/privacy.md. Определить публикуемый набор через git status/diff и ожидаемый канал передачи. Локальная обработка приватного материала не делает его разрешённым для публичного репозитория. Пользовательские указания о конфиденциальности применяются и к метаданным.
+Read docs/privacy.md. Determine the actual publication set from status/diff; private input does not become public because it was processed locally. Keep originals, raw FIG/PDF/JSON/renders, signed URLs and account responses in ignored .local. Verify ignore state; tracked files remain tracked despite ignore rules.
 
-## Проверка
+Replace personal values with synthetic data while preserving API field names and requirements. Use Dev 1–4, sample_user, user@example.invalid. Sanitize copies, retain private originals and label derived snapshots. For OpenAPI preserve structural fields and check equivalence excluding intentionally sanitized examples/descriptions.
 
-1. Приватные оригиналы оставить в .local; проверить git check-ignore. Игнорирование не удаляет уже отслеживаемые файлы. Не помещать сырые FIG/PDF, signed asset URLs и account response в docs.
-2. Текст просмотреть на локальные пути, реальные имена/email, секреты, приватные ссылки и ненужные авторские метаданные. Использовать Dev 1–4, sample_user и user@example.invalid. Сохранить имена API-полей и смысл требований.
-3. Обезличивать копию, не уничтожать оригинал. Для OpenAPI сохранить paths, required, enums, types и responses; отметить удаление examples и отсутствие побайтового соответствия.
-4. Выполнить python scripts/privacy_check.py. При наличии локального словаря выполнить также --private-terms .local/private-terms.json. Не печатать найденное значение в отчёте; достаточно repo-relative пути, строки и категории.
-5. Проверить staged bytes командой python scripts/privacy_check.py --staged после staging. Чистая рабочая копия может отличаться от index.
-6. Изображения/SVG/видео проверить визуально. Не считать удаление metadata или переименование файла достаточным обезличиванием. Не обходить блокировку бинарного файла общим allowlist.
+Run python scripts/privacy_check.py; if available also --private-terms .local/private-terms.json. After staging run --staged to inspect index bytes. Report repository-relative path/line/category, never the matched secret or local private dictionary. Scan images visually before publishing; metadata removal does not erase text in pixels. Do not solve a finding with blanket allowlists.
 
-## Если данные уже опубликованы
+Distinguish current files from published history, CI logs and caches. Correct authorized local files; do not claim history deletion or change Git author, force-push or revoke credentials without the corresponding task authorization. Notify the user of an exposed secret without repeating it.
 
-Отделить текущий diff от истории, remote PR, логов CI и кэшей. Исправить разрешённую текущую копию; не обещать удаления из истории. Утёкший секрет требует отзыва владельцем. Force push, изменение доступа и удаление чужих материалов — отдельное действие с конкретным scope, а не автоматический шаг scanner.
-
-## Результат
-
-Передать число проверенных файлов, выполненные команды, классы удалённых данных и пределы проверки. Scanner не доказывает отсутствие любого имени и не заменяет OCR/ручной просмотр. Личный словарь, исходный путь и сами найденные значения не включать в публичный отчёт.
+Report checked scope, actual results and remaining limits. Scanner cannot identify every name or perform complete OCR. Keep the small remaining manual checks targeted to publishable imagery and ambiguous personal values.

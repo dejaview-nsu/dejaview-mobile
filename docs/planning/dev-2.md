@@ -27,11 +27,13 @@
 
 ## D2-02 CI и качество
 
+Подключить [quality gate](../testing.md): реальные Android tasks, отчёты, coverage, проверки границ и CI с SDK. Repository gate не проверяет Android. Выполнить отрицательный прогон на нарушении правила, затем убрать контрольное нарушение.
+
 **Файлы:** `.github`, `scripts`, `core/testing`. Создать PR workflow: фиксированный JDK из version catalog/toolchain, Gradle cache, lint/стиль, unit tests, сборка demoDebug и prodDebug. Проверить реальные имена tasks после создания flavor; ожидаются `testDemoDebugUnitTest`, `testProdDebugUnitTest`, `lintDemoDebug`, `lintProdDebug`, `assembleDemoDebug`, `assembleProdDebug`. Не копировать `testDebugUnitTest`, если такой задачи уже нет.
 
 Добавить PR template с UC, включёнными/отложенными альтернативами, способом проверки, скриншотом UI и backend-зависимостями. Проверка Gradle-графа запрещает feature implementation → feature implementation; разрешены `search-api` и `core/contracts`. Production graph не содержит `core/testing`. Тестовые ресурсы и demo fixtures не заменяют реальную сеть в prod.
 
-CODEOWNERS по таблице владельцев, review rotation и branch protection передаются владельцу repo для настройки. Несколько владельцев в строке не означают обязательный аппрув каждого. Для общего контракта просить ревью потребителя отдельным шагом. Ключ подписи не кладётся в git; инфраструктура release workflow для внутреннего APK, публикацию в магазин не выполнять.
+CODEOWNERS и branch protection — возможные настройки владельца repo, не обязательные условия текущего мобильного процесса. Несколько владельцев в строке не означают обязательный аппрув каждого. Ревью потребителя желательно; отсутствие ревью не блокирует локальную работу и не заменяет тесты. Ключ подписи не кладётся в git; инфраструктура release workflow для внутреннего APK, публикацию в магазин не выполнять.
 
 **Выход:** зелёный PR CI, артефакты с SHA/variant, воспроизводимая команда для Windows (`.\gradlew.bat ...`) и Linux (`./gradlew ...`). **Приёмка:** намеренно нарушенный test/межмодульный импорт даёт красный job; реальные проверки запускаются, а не отмечаются пропущенными. Эмуляторный smoke обязателен до поставки, не обязательно в каждом PR.
 
