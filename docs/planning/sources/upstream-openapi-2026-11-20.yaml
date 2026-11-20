@@ -1,0 +1,2427 @@
+# Sanitized derivative: examples removed; descriptions use synthetic identities.
+openapi: 3.0.3
+info:
+  title: DejaView API
+  version: 0.0.1
+  description: Черновик контракта API. Заполняется командой backend.
+servers:
+- url: /api/v1
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: dv_session
+      description: Идентификатор серверной сессии. Сессия хранится в PostgreSQL, срок жизни не более 24
+        ч (#17094 п. 1.3).
+  schemas:
+    Error:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки в UPPER_SNAKE_CASE.
+        message:
+          type: string
+          description: Текст для пользователя на русском (#17097 п. 1.2), без внутренних деталей системы
+            (#17094 п. 4.3).
+        field:
+          type: string
+          nullable: true
+          description: Поле формы или параметр запроса, к которому относится ошибка.
+    SearchErrorCode:
+      type: string
+      description: 'Коды ошибок поиска. Какой подпункт требований каким кодом закрыт - в описании операции.
+
+
+        - `FILE_REQUIRED` - файл не передан.
+
+        - `TOO_MANY_FILES` - передано больше одного файла.
+
+        - `FILE_TOO_LARGE` - файл больше лимита режима.
+
+        - `UNSUPPORTED_FORMAT` - формат файла не из списка режима.
+
+        - `VIDEO_TOO_LONG` - видео длиннее 30 с.
+
+        - `AUDIO_TOO_LONG` - аудио длиннее 10 с.
+
+        - `FILE_CORRUPTED` - файл поврежден или не декодируется.
+
+        - `QUERY_EMPTY`, `QUERY_TOO_SHORT`, `QUERY_TOO_LONG`, `QUERY_NOT_ALLOWED` - ошибки текстового
+        запроса.
+
+        - `SEARCH_UNAVAILABLE` - ML-сервис недоступен или не ответил в таймаут.
+
+        - `SERVER_BUSY` - перегрузка: лимит параллельных запросов к ML-сервису исчерпан.
+
+        '
+      enum:
+      - FILE_REQUIRED
+      - TOO_MANY_FILES
+      - FILE_TOO_LARGE
+      - UNSUPPORTED_FORMAT
+      - VIDEO_TOO_LONG
+      - AUDIO_TOO_LONG
+      - FILE_CORRUPTED
+      - QUERY_EMPTY
+      - QUERY_TOO_SHORT
+      - QUERY_TOO_LONG
+      - QUERY_NOT_ALLOWED
+      - SEARCH_UNAVAILABLE
+      - SERVER_BUSY
+    SearchError:
+      description: Ошибка поиска - `Error` с кодом из `SearchErrorCode`.
+      allOf:
+      - $ref: '#/components/schemas/Error'
+      - type: object
+        properties:
+          code:
+            $ref: '#/components/schemas/SearchErrorCode'
+    SearchImageRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 'Один файл изображения: JPG, JPEG, PNG или WEBP, до 10 МБ (#17153 п. 4.2). Картинка,
+            вставленная из буфера обмена (#17153 п. 3.2), отправляется так же, как выбранный файл.'
+    SearchVideoRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 'Один видеофайл: MP4, MOV или WEBM, не длиннее 30 с и до 50 МБ (#17154 п. 4.2).'
+    SearchAudioRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 'Один аудиофайл: MP3, WAV, OGG или M4A, не длиннее 10 с и до 20 МБ (#17155 п. 4.2).
+            Запись с микрофона (#17155 п. 3.2) отправляется так же, как выбранный файл, в WAV.'
+    SearchTextRequest:
+      type: object
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          minLength: 3
+          maxLength: 250
+          description: Свободное описание фильма на русском или английском (#17152 п. 3.1-3.3), от 3 до
+            250 символов (#17152 п. 3.4).
+    SearchResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          maxItems: 10
+          description: 'Фильмы по убыванию релевантности. Для текста не больше 10 (#17152 п. 4.4), для
+            изображения и видео не больше 1 (#17153 п. 6.1, #17154 п. 6.1). Пустой массив - ничего не
+            найдено (#17152 п. 6, #17153 п. 7, #17154 п. 7), это не ошибка. Score релевантности не отдается
+            (#17392 п. 5, #17152 п. 5.4). Фильм, для которого нет карточки ни в PostgreSQL, ни в TMDB,
+            в выдачу не попадает; если так выпали все, ответ - пустая выдача, а не 503.'
+          items:
+            $ref: '#/components/schemas/MovieSearchResult'
+    MovieSearchResult:
+      type: object
+      description: 'Элемент выдачи: поля по #17152 п. 5.1, #17153 п. 6.2, #17154 п. 6.2. Backend берет
+        их из PostgreSQL (кеш TMDB, #17393 п. 2), отдельный запрос на каждый элемент выдачи не нужен.'
+      required:
+      - movie_id
+      - title
+      - year
+      - poster_url
+      - overview
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+          description: Идентификатор фильма TMDB (#17241). По нему frontend открывает карточку фильма
+            (#17153 п. 6.2.5, 6.3).
+        title:
+          type: string
+          description: Название фильма.
+        year:
+          type: integer
+          nullable: true
+          description: Год выпуска, null - год неизвестен.
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Полный URL постера на CDN TMDB (#17393 п. 2). null - постера нет, frontend показывает
+            заглушку.
+        overview:
+          type: string
+          nullable: true
+          description: Описание фильма целиком, null - описания нет. До фрагмента его обрезает frontend
+            под свою верстку.
+    AuthUsername:
+      type: string
+      minLength: 3
+      maxLength: 30
+      pattern: ^[A-Za-z0-9_]+$
+      description: "Имя пользователя (#17148 п. 2.1, #17030 п. 2.1.2): 3-30 символов, латинские буквы,\
+        \ цифры\nи `_`, уникально в системе. Уникальность без учета регистра (допущение).\n\nОшибки, code\
+        \ `AUTH_VALIDATION_ERROR`, field `username` (#17148 п. 2.3):\n- пусто - «Введите имя пользователя»;\n\
+        - короче 3 символов - «Имя пользователя должно содержать не менее 3 символов»;\n- длиннее 30 символов\
+        \ - «Имя пользователя должно содержать не более 30 символов»;\n- другие символы - «Имя пользователя\
+        \ может содержать только латинские буквы, цифры и\n  нижнее подчёркивание».\n\nЗанято - `409 AUTH_USERNAME_TAKEN`\
+        \ (#17148 п. 2.4).\n"
+    AuthEmail:
+      type: string
+      format: email
+      maxLength: 254
+      description: 'Email (#17148 п. 2.1): формат RFC 5322, уникален в системе. Сравнивается без учета
+
+        регистра (допущение). Не длиннее 254 символов - предел адреса в RFC 5321 (допущение).
+
+
+        Ошибки, code `AUTH_VALIDATION_ERROR`, field `email` (#17148 п. 2.3):
+
+        - пусто - «Введите email»;
+
+        - неверный формат или длина - «Введите корректный email».
+
+
+        Занят - `409 AUTH_EMAIL_TAKEN` (#17148 п. 2.4).
+
+        '
+    AuthBirthYear:
+      type: integer
+      minimum: 1900
+      description: 'Год рождения, YYYY (#17148 п. 2.1). Верхняя граница - текущий год: она меняется, поэтому
+
+        в схеме ее нет, ее проверяет сервер.
+
+
+        Клиент проверяет по #17148 п. 2.3:
+
+        - пусто - «Укажите год рождения»;
+
+        - не 4 цифры - «Введите год рождения в формате YYYY»;
+
+        - меньше 1900 - «Введите корректный год рождения»;
+
+        - больше текущего - «Год рождения не может быть больше текущего года».
+
+
+        Сервер на любое нарушение отвечает `400 AUTH_BIRTH_YEAR_INVALID`, field `birth_year`,
+
+        текст «Введите корректный год рождения» (#17148 п. 2.4).
+
+        '
+    AuthPassword:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 128
+      pattern: ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).*$
+      description: "Новый пароль (#17148 п. 2.1, #17150 п. 2.1): 8-128 символов, хотя бы одна заглавная\
+        \ и\nодна строчная латинская буква, цифра и специальный символ. Специальный символ - любой,\n\
+        кроме латинской буквы и цифры (допущение: набор в требованиях не задан).\n\nОшибки, code `AUTH_VALIDATION_ERROR`\
+        \ (#17148 п. 2.3, #17150 п. 2.3):\n- пусто - «Введите пароль», в формах #17150 - «Введите новый\
+        \ пароль»;\n- короче 8 символов - «Пароль должен содержать не менее 8 символов»;\n- длиннее 128\
+        \ символов - «Пароль должен содержать не более 128 символов» (допущение:\n  текста в требованиях\
+        \ нет);\n- нет заглавной буквы, строчной буквы или цифры - «Пароль должен содержать хотя бы одну\n\
+        \  заглавную букву, одну строчную букву и одну цифру»;\n- нет специального символа - «Пароль должен\
+        \ содержать хотя бы одну заглавную букву, одну\n  строчную букву, одну цифру и один специальный\
+        \ символ» (допущение: #17148 п. 2.3\n  спецсимвол не проверяет, в #17150 п. 2.3 вместо «и» стоит\
+        \ «или»).\n\nСовпадение с подтверждением («Пароли не совпадают») проверяет только клиент, поле\n\
+        подтверждения на сервер не отправляется: в серверных проверках #17148 п. 2.4 его нет.\n"
+    AuthLogin:
+      type: string
+      minLength: 1
+      maxLength: 254
+      anyOf:
+      - type: string
+        pattern: ^[A-Za-z0-9_]{3,30}$
+      - type: string
+        format: email
+      description: "Имя пользователя или email (#17149 п. 2.1, п. 2.2 шаг 3). Строка с `@` - email, без\
+        \ `@` -\nимя пользователя.\n\nОшибки, code `AUTH_VALIDATION_ERROR`, field `login` (#17149 п. 2.3,\
+        \ #17150 п. 1.2 шаг 4):\n- пусто - «Введите имя пользователя или email»;\n- не имя пользователя\
+        \ по правилам `AuthUsername` и не email - «Введите корректные имя\n  пользователя или email».\n"
+    AuthLinkToken:
+      type: string
+      minLength: 1
+      description: Токен из ссылки в письме. Непрозрачная строка, формат выбирает backend.
+    AuthTokenRequest:
+      type: object
+      required:
+      - token
+      properties:
+        token:
+          $ref: '#/components/schemas/AuthLinkToken'
+    AuthRegisterRequest:
+      type: object
+      required:
+      - username
+      - email
+      - birth_year
+      - password
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+        email:
+          $ref: '#/components/schemas/AuthEmail'
+        birth_year:
+          $ref: '#/components/schemas/AuthBirthYear'
+        password:
+          $ref: '#/components/schemas/AuthPassword'
+    AuthConfirmationSent:
+      type: object
+      required:
+      - resend_after
+      properties:
+        resend_after:
+          type: integer
+          minimum: 0
+          maximum: 60
+          description: 'Через сколько секунд станет доступна кнопка «Отправить повторно» (#17148 п. 2.2
+
+            шаг 10). Сразу после отправки письма - 60.
+
+            '
+    AuthResendConfirmationRequest:
+      description: Ровно одно из полей - `login` или `token`.
+      oneOf:
+      - type: object
+        required:
+        - login
+        properties:
+          login:
+            $ref: '#/components/schemas/AuthLogin'
+      - type: object
+        required:
+        - token
+        properties:
+          token:
+            $ref: '#/components/schemas/AuthLinkToken'
+    AuthLoginRequest:
+      type: object
+      required:
+      - login
+      - password
+      properties:
+        login:
+          $ref: '#/components/schemas/AuthLogin'
+        password:
+          type: string
+          format: password
+          minLength: 1
+          description: 'Пароль. Клиент проверяет только, что поле не пустое: «Введите пароль» (#17149
+            п. 2.3).
+
+            Строку длиннее 128 символов сервер не хеширует и отвечает `AUTH_INVALID_CREDENTIALS`:
+
+            таких паролей не бывает (#17148 п. 2.1). Поэтому `maxLength` в схеме нет.
+
+            '
+        captcha_token:
+          type: string
+          description: 'Токен Yandex SmartCaptcha из виджета на форме входа. Нужен, если предыдущий ответ
+
+            пришел с `captcha_required: true`. На каждую попытку - новый токен.
+
+            '
+    AuthLoginError:
+      description: Ошибка формы входа - `Error` и признак CAPTCHA.
+      allOf:
+      - $ref: '#/components/schemas/Error'
+      - type: object
+        required:
+        - captcha_required
+        properties:
+          captcha_required:
+            type: boolean
+            description: '`true` - следующую попытку надо отправить с `captcha_token`, клиент сразу
+
+              показывает виджет (#17149 п. 2.2 шаг 8, п. 2.5).
+
+              '
+    AuthOidcProvider:
+      type: string
+      enum:
+      - google
+      - yandex
+      - vk
+      description: OIDC-провайдер (#17148 п. 3.1). `vk` - VK ID.
+    AuthOidcPending:
+      type: object
+      required:
+      - kind
+      - provider
+      - email
+      - suggested_username
+      properties:
+        kind:
+          type: string
+          enum:
+          - registration
+          - link
+          description: '`registration` - страница «Завершение регистрации» (#17148 п. 3.2 шаг 8).
+
+            `link` - форма входа с сообщением «Учётная запись с email {email} уже существует.
+
+            Войдите с паролем, чтобы привязать {провайдер}» (#17148 п. 3.2 шаг 7).
+
+            '
+        provider:
+          $ref: '#/components/schemas/AuthOidcProvider'
+        email:
+          type: string
+          format: email
+          description: Email из профиля провайдера.
+        suggested_username:
+          type: string
+          nullable: true
+          description: 'Для `registration` - имя пользователя из имени профиля провайдера, при совпадении
+            с
+
+            занятым - со случайным числовым суффиксом (#17148 п. 3.2 шаг 7). Символы вне
+
+            `[A-Za-z0-9_]` транслитерируются или отбрасываются, длина приводится к 3-30
+
+            (допущение: имя профиля может быть на кириллице). Для `link` - `null`.
+
+            '
+    AuthOidcCompleteRequest:
+      type: object
+      required:
+      - username
+      - birth_year
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+        birth_year:
+          $ref: '#/components/schemas/AuthBirthYear'
+    AuthPasswordResetRequest:
+      type: object
+      required:
+      - login
+      properties:
+        login:
+          $ref: '#/components/schemas/AuthLogin'
+    AuthPasswordResetCompleteRequest:
+      type: object
+      required:
+      - token
+      - new_password
+      properties:
+        token:
+          $ref: '#/components/schemas/AuthLinkToken'
+        new_password:
+          $ref: '#/components/schemas/AuthPassword'
+    UserPasswordChangeRequest:
+      type: object
+      required:
+      - new_password
+      properties:
+        current_password:
+          type: string
+          format: password
+          minLength: 1
+          description: 'Текущий пароль. Обязателен, если у учетной записи есть пароль (`has_password`);
+
+            пустой - «Введите текущий пароль» (#17150 п. 3.2 шаг 8). Без пароля (учетная запись
+
+            из OIDC) поле не передается (#17150 п. 3.1). Строка длиннее 128 символов -
+
+            `AUTH_CURRENT_PASSWORD_INVALID` без хеширования.
+
+            '
+        new_password:
+          $ref: '#/components/schemas/AuthPassword'
+    SessionInfo:
+      type: object
+      required:
+      - user
+      - expires_at
+      properties:
+        user:
+          $ref: '#/components/schemas/UserSummary'
+        expires_at:
+          type: string
+          format: date-time
+          description: Конец сессии - 24 ч с момента входа, не продлевается (#17094 п. 1.3).
+    UserSummary:
+      type: object
+      required:
+      - username
+      - avatar_url
+      - has_password
+      properties:
+        username:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          description: 'Фото профиля для аватара в шапке (#17149 п. 2.6). `null` - фото нет, клиент
+
+            показывает иконку «Пользователь» (#17030 п. 2.1.1.1). До работ по профилю (#17030)
+
+            всегда `null`.
+
+            '
+        has_password:
+          type: boolean
+          description: '`false` - учетная запись создана через OIDC и пароль не задан: в смене пароля
+            нет
+
+            поля «Текущий пароль» (#17150 п. 3.1).
+
+            '
+    MovieCard:
+      type: object
+      description: 'Карточка фильма для блоков 1, 3, 8, 9, 10 #17193. Поля и их пустые значения совпадают
+        с таблицей `movies` (#17627, `contracts/db-schema.md`), кроме `poster_url`: в БД лежит `poster_path`,
+        полный URL собирает backend, как и у фото актеров. Пустое значение - `null` у скалярных полей
+        и `[]` у списков, пустых строк нет. Остальные блоки (трейлер, актеры дубляжа, оценки, отзывы)
+        добавятся новыми полями или операциями: клиент игнорирует незнакомые поля.'
+      required:
+      - movie_id
+      - title
+      - original_title
+      - year
+      - age_rating
+      - poster_url
+      - runtime_min
+      - overview
+      - genres
+      - countries
+      - crew
+      - actors
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+          description: Идентификатор фильма TMDB (#17241).
+        title:
+          type: string
+          minLength: 1
+          description: Название на русском (#17193 блок 3,
+        original_title:
+          type: string
+          minLength: 1
+          description: Название на языке оригинала (#17193 блок 3).
+        year:
+          type: integer
+          nullable: true
+          description: Год выпуска (#17193 блок 3), как в `MovieSearchResult.year`. Backend берет год
+            из `movies.release_date` (#17627). null - дата неизвестна.
+        age_rating:
+          type: string
+          nullable: true
+          enum:
+          - 0+
+          - 6+
+          - 12+
+          - 16+
+          - 18+
+          - null
+          description: Возрастное ограничение, только российский формат (#17193 блок 3). null - в TMDB
+            нет рейтинга для RU (#17640), frontend блок не показывает.
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+          description: 'Полный URL постера на CDN TMDB (#17193 блок 1, #17393 п. 2), как в `MovieSearchResult`.
+            null - постера нет, frontend показывает заглушку.'
+        runtime_min:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Длительность в минутах. Формат «X ч Y мин» собирает frontend (#17193 блок 8). null
+            - длительность неизвестна.
+        overview:
+          type: string
+          minLength: 1
+          nullable: true
+          description: Описание сюжета (#17193 блок 9). null - описания нет.
+        genres:
+          type: array
+          description: Жанры (#17193 блок 8) в порядке показа. `[]` - жанров нет.
+          items:
+            $ref: '#/components/schemas/MovieGenre'
+        countries:
+          type: array
+          description: Страны производства (#17193 блок 8) в порядке показа. `[]` - стран нет.
+          items:
+            $ref: '#/components/schemas/MovieCountry'
+        crew:
+          type: array
+          description: 'Съемочная группа (#17193 блок 8) в порядке показа. Один элемент - одна роль человека:
+            режиссер и сценарист в одном лице - два элемента. Единственное или множественное число в подписи
+            («Сценарист», «Сценаристы») выбирает frontend по числу элементов роли. `[]` - данных нет,
+            frontend строки блока 8 не показывает.'
+          items:
+            $ref: '#/components/schemas/MovieCrewMember'
+        actors:
+          type: array
+          description: 'Актеры (#17193 блок 10, #17240) в порядке TMDB, не больше 30 - столько сохраняет
+            скрипт каталога (#17640). `[]` - данных нет, frontend блок не показывает.'
+          items:
+            $ref: '#/components/schemas/MovieActor'
+    MovieGenre:
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: integer
+          description: id жанра TMDB.
+        name:
+          type: string
+          description: Название на русском.
+    MovieCountry:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: Код ISO 3166-1 alpha-2.
+        name:
+          type: string
+          description: Название на русском.
+    MovieCrewMember:
+      type: object
+      required:
+      - person_id
+      - name
+      - role
+      properties:
+        person_id:
+          type: integer
+          format: int64
+          description: id человека в TMDB.
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+          - director
+          - writer
+          - composer
+          - producer
+          description: Режиссер, сценарист, композитор, продюсер (#17193 блок 8).
+    MovieActor:
+      type: object
+      required:
+      - person_id
+      - name
+      - character
+      - photo_url
+      properties:
+        person_id:
+          type: integer
+          format: int64
+          description: id человека в TMDB.
+        name:
+          type: string
+        character:
+          type: string
+          nullable: true
+          description: Роль в фильме, подпись под именем (#17240). null - роль в TMDB не указана.
+        photo_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Полный URL фото на CDN TMDB, размер w185. null - фото нет, frontend показывает
+            заглушку.
+    MovieReviewsPage:
+      type: object
+      required:
+      - reviews
+      - has_more
+      properties:
+        reviews:
+          type: array
+          maxItems: 10
+          description: Отзывы страницы в порядке `sort`. `[]` - отзывов нет или страница за последней.
+          items:
+            $ref: '#/components/schemas/MovieReview'
+        has_more:
+          type: boolean
+          description: Есть следующая страница - frontend показывает кнопку «Еще отзывы» (#17239).
+    MovieReview:
+      type: object
+      description: Отзыв о фильме (#17239), поля - из формы отзыва
+      required:
+      - review_id
+      - username
+      - created_at
+      - is_edited
+      - verdict
+      - title
+      - body
+      - likes
+      - dislikes
+      properties:
+        review_id:
+          type: integer
+          format: int64
+        username:
+          type: string
+          nullable: true
+          description: Никнейм автора. null - профиль удален, frontend пишет «Удаленный пользователь»
+            (#17030 п. 3).
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания в UTC. Вид «12 ноября 2024, 15:37» в часовом поясе пользователя собирает
+            frontend (#17239).
+        is_edited:
+          type: boolean
+          description: Отзыв редактировался - пометка «Редактирован» рядом с датой (#17029 п. 3).
+        verdict:
+          type: string
+          enum:
+          - positive
+          - neutral
+          - negative
+          description: «Положительно», «Нейтрально», «Негативно» (#17029 п. 1.1), подписи - на frontend.
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 150
+          description: Заголовок (#17029 п. 1.2). null - отзыв без заголовка.
+        body:
+          type: string
+          minLength: 300
+          maxLength: 10000
+          description: Текст отзыва (#17029 п. 1.3).
+        likes:
+          type: integer
+          minimum: 0
+          description: Реакций «палец вверх» (#17029 п. 5).
+        dislikes:
+          type: integer
+          minimum: 0
+          description: 'Реакций «палец вниз». «+N», «-N» или «0» под отзывом - разница `likes - dislikes`
+            (#17239); число реакций каждого вида - #17029 п. 5.'
+    UserListPage:
+      type: object
+      required:
+      - movies
+      - total
+      properties:
+        movies:
+          type: array
+          maxItems: 24
+          description: Фильмы страницы в порядке `sort`. `[]` - список пуст, по `q` ничего не нашлось
+            или страница за последней.
+          items:
+            $ref: '#/components/schemas/UserListMovie'
+        total:
+          type: integer
+          minimum: 0
+          description: Сколько фильмов списка подходит под `q`, без `q` - сколько в списке всего. Число
+            страниц для пагинации и «Страница X из Y» (#17030 п. 2.4.3) - `ceil(total / 24)`.
+    UserListMovie:
+      type: object
+      description: Плитка фильма в списке профиля (#17030 п. 2.2.1.1, 2.2.2.1).
+      required:
+      - movie_id
+      - title
+      - poster_url
+      - average_rating
+      - user_rating
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+          description: Идентификатор фильма TMDB (#17241). По нему frontend открывает карточку фильма
+            (#17030 п. 2.2.1.2).
+        title:
+          type: string
+          minLength: 1
+          description: Название на русском, как в `MovieCard.title`.
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Полный URL постера на CDN TMDB, как в `MovieCard`. null - постера нет, frontend
+            показывает заглушку.
+        average_rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Средняя оценка пользователей платформы с одним знаком после запятой (#17028, `round(avg(score),
+            1)` по `ratings` в `contracts/db-schema.md`). null - оценок нет.
+        user_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Оценка текущего пользователя (#17028). null - не выставлена, на плитке кнопка «Оценить»
+            (#17030 п. 2.2.1.1.4).
+    UserMovieState:
+      type: object
+      description: 'Фильм у текущего пользователя - состояние блоков 6, 7 #17193 на странице фильма. Оценку
+        пользователя (блок 5, #17028) добавит ее задача новым полем: клиент игнорирует незнакомые поля.'
+      required:
+      - want_to_watch
+      - watched
+      properties:
+        want_to_watch:
+          type: boolean
+          description: Фильм в списке «Хочу посмотреть», чекбокс установлен (#17026).
+        watched:
+          type: boolean
+          description: Фильм в списке «Просмотрено», чекбокс установлен (#17027).
+  responses:
+    Unauthorized:
+      description: Нет сессии или сессия истекла (#17094 п. 1.1, 1.3).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: 'Превышен лимит 100 запросов в минуту (#17094 п. 3.4), code `RATE_LIMITED`. Отвечает
+        nginx (`limit_req`, wiki `Nginx`): тело и `Retry-After` задаются в его конфиге, `Retry-After`
+        - постоянное число.'
+      headers:
+        Retry-After:
+          description: Через сколько секунд можно повторить запрос.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Непредвиденная ошибка сервера.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    SearchUnavailable:
+      description: 'Поиск временно недоступен (#17152 п. 8, #17153 п. 9, #17154 п. 9). Результатов в ответе
+        нет: вместо ошибки нерелевантная выдача не отдается (#17153 п. 9.1). Коды общие с контрактом backend
+        - ML-сервис (#17626).'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SearchError'
+    SessionCreated:
+      description: Создана сессия, установлена cookie `dv_session`.
+      headers:
+        Set-Cookie:
+          $ref: '#/components/headers/SessionSetCookie'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SessionInfo'
+    AuthOidcExpired:
+      description: 'Нет cookie `dv_oidc` или истекли 30 минут на завершение входа через OIDC. Клиент
+
+        возвращает пользователя на форму входа или регистрации. Если провайдер неизвестен
+
+        (cookie нет), текст без «через {провайдер}» (допущение).
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    AuthResetLinkExpired:
+      description: 'Ссылка сброса пароля истекла, заменена новой или уже использована (#17150 п. 2.2
+
+        шаг 2, п. 2.4). Клиент показывает кнопку «Запросить повторно», она ведет к форме запроса.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  parameters:
+    AuthOidcProviderPath:
+      name: provider
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/AuthOidcProvider'
+    AuthOidcCookie:
+      name: dv_oidc
+      in: cookie
+      required: true
+      description: Cookie незавершенного входа через OIDC, см. тег OIDC.
+      schema:
+        type: string
+    ListTypePath:
+      name: list_type
+      in: path
+      required: true
+      description: '`want_to_watch` - «Хочу посмотреть» (#17026), `watched` - «Просмотрено» (#17027).'
+      schema:
+        type: string
+        enum:
+        - want_to_watch
+        - watched
+  headers:
+    SessionSetCookie:
+      description: '`dv_session=<id>; HttpOnly; Secure; SameSite=Lax; Path=/api/v1; Max-Age=86400`.
+
+        `<id>` - случайный идентификатор, в PostgreSQL хранится его хеш (wiki `PostgreSQL`).
+
+        '
+      schema:
+        type: string
+    SessionClearCookie:
+      description: Стирает cookie `dv_session`.
+      schema:
+        type: string
+paths:
+  /search/image:
+    post:
+      operationId: searchByImage
+      tags:
+      - search
+      summary: Поиск фильма по изображению
+      description: "Кадр, скриншот, постер или титр (#17153 п. 1.2) - на выходе один наиболее релевантный\n\
+        фильм (#17153 п. 6.1). Только для авторизованного пользователя (#17153 п. 1.1,\n#17243 п. 4.3,\
+        \ 5.3): без сессии - 401, frontend открывает форму входа.\n\n**Время.** Запрос синхронный: один\
+        \ HTTP-запрос без очереди и опроса статуса (wiki\n`Стек_технологий`, разд. 7). Ответ - не дольше\
+        \ 10 с для 95% запросов (#17093 п. 2.3),\nотсчет с момента, когда тело запроса получено целиком.\
+        \ Загрузка файла до 10 МБ - не\nдольше 5 с (#17093 п. 3.1). При перегрузке 503 `SERVER_BUSY` приходит\
+        \ не дольше чем\nчерез 5 с (#17093 п. 5.1). Лимит - 100 запросов в минуту на сессию (#17094 п.\
+        \ 3.4).\n\n**Ограничения и ошибки** (#17153 п. 4.2, 8.1). 1 МБ = 1 048 576 байт, границы\nвключительно.\
+        \ Формат определяется по содержимому файла, а не по расширению. Если\nнарушений несколько, в ответе\
+        \ одно - первое в порядке проверки: наличие файла, число\nфайлов, размер, формат, целостность.\n\
+        \n| #17153 | Условие | HTTP | code |\n|---|---|---|---|\n| 8.1.1 | изображение не загружено и\
+        \ не вставлено | 400 | `FILE_REQUIRED` |\n| 8.1.2 | больше одного файла | 400 | `TOO_MANY_FILES`\
+        \ |\n| 8.1.3 | формат не JPG, JPEG, PNG или WEBP | 415 | `UNSUPPORTED_FORMAT` |\n| 8.1.4 | размер\
+        \ больше 10 МБ | 413 | `FILE_TOO_LARGE` |\n| 8.1.5 | файл поврежден или не обрабатывается | 422\
+        \ | `FILE_CORRUPTED` |\n\nПример запроса:\n\n```\ncurl -X POST https://<host>/api/v1/search/image\
+        \ \\\n  -b 'dv_session=<идентификатор сессии>' \\\n  -F 'file=@frame.jpg;type=image/jpeg'\n```\n"
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchImageRequest'
+            encoding:
+              file:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        '200':
+          description: 'Поиск выполнен. Пустой `results` - релевантный фильм не найден (#17153 п. 7.1):
+            это не ошибка, frontend показывает сообщение об отсутствии результата.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Файла нет или их больше одного (#17153 п. 8.1.1, 8.1.2).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 'Файл больше 10 МБ (#17153 п. 8.1.4). Тело больше лимита nginx (`client_max_body_size`,
+            wiki `Nginx`) отклоняет nginx, ответ тот же: JSON с кодом `FILE_TOO_LARGE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '415':
+          description: Формат не JPG, JPEG, PNG или WEBP (#17153 п. 8.1.3).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '422':
+          description: Файл поврежден или не может быть обработан (#17153 п. 8.1.5).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+  /search/video:
+    post:
+      operationId: searchByVideo
+      tags:
+      - search
+      summary: Поиск фильма по видеофрагменту
+      description: "Короткая сцена или фрагмент видео (#17154 п. 1.2) - на выходе один наиболее релевантный\n\
+        фильм (#17154 п. 6.1). Только для авторизованного пользователя (#17154 п. 1.1,\n#17243 п. 4.3,\
+        \ 5.4): без сессии - 401, frontend открывает форму входа.\n\n**Время.** Запрос синхронный: один\
+        \ HTTP-запрос без очереди и опроса статуса (wiki\n`Стек_технологий`, разд. 7). Ответ - не дольше\
+        \ 15 с для 95% запросов (#17093 п. 2.4),\nотсчет с момента, когда тело запроса получено целиком.\
+        \ Загрузка файла до 50 МБ - не\nдольше 30 с (#17093 п. 3.2). При перегрузке 503 `SERVER_BUSY`\
+        \ приходит не дольше чем\nчерез 5 с (#17093 п. 5.1). Лимит - 100 запросов в минуту на сессию (#17094\
+        \ п. 3.4).\n\n**Загрузка и обработка** идут в одном запросе: прогресс загрузки клиент видит по\
+        \ отправке\nтела, после отправки ждет ответа (#17625). Отмена на любом этапе - клиент обрывает\
+        \ запрос.\n\n**Ограничения и ошибки** (#17154 п. 4.2, 8.1). 1 МБ = 1 048 576 байт, границы\nвключительно.\
+        \ Формат определяется по содержимому файла, а не по расширению. Если\nнарушений несколько, в ответе\
+        \ одно - первое в порядке проверки: наличие файла, число\nфайлов, размер, формат, длительность,\
+        \ целостность.\n\n| #17154 | Условие | HTTP | code |\n|---|---|---|---|\n| 8.1.1 | видеофрагмент\
+        \ не загружен | 400 | `FILE_REQUIRED` |\n| 8.1.2 | больше одного файла | 400 | `TOO_MANY_FILES`\
+        \ |\n| 8.1.3 | формат не MP4, MOV или WEBM | 415 | `UNSUPPORTED_FORMAT` |\n| 8.1.4 | длительность\
+        \ больше 30 с | 422 | `VIDEO_TOO_LONG` |\n| 8.1.5 | размер больше 50 МБ | 413 | `FILE_TOO_LARGE`\
+        \ |\n| 8.1.6 | файл поврежден или не обрабатывается | 422 | `FILE_CORRUPTED` |\n\nПример запроса:\n\
+        \n```\ncurl -X POST https://<host>/api/v1/search/video \\\n  -b 'dv_session=<идентификатор сессии>'\
+        \ \\\n  -F 'file=@scene.mp4;type=video/mp4'\n```\n"
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchVideoRequest'
+            encoding:
+              file:
+                contentType: video/mp4, video/quicktime, video/webm
+      responses:
+        '200':
+          description: 'Поиск выполнен. Пустой `results` - релевантный фильм не найден (#17154 п. 7.1):
+            это не ошибка, frontend показывает сообщение об отсутствии результата.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Файла нет или их больше одного (#17154 п. 8.1.1, 8.1.2).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 'Файл больше 50 МБ (#17154 п. 8.1.5). Тело больше лимита nginx (`client_max_body_size`,
+            wiki `Nginx`) отклоняет nginx, ответ тот же: JSON с кодом `FILE_TOO_LARGE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '415':
+          description: Формат не MP4, MOV или WEBM (#17154 п. 8.1.3).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '422':
+          description: Видео длиннее 30 с (#17154 п. 8.1.4) или файл поврежден и не может быть обработан
+            (#17154 п. 8.1.6).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+  /search/audio:
+    post:
+      operationId: searchByAudio
+      tags:
+      - search
+      summary: Поиск фильма по аудиофрагменту
+      description: "Реплика, музыка или звуковая сцена (#17155 п. 1.2, 4.1) - на выходе один наиболее\n\
+        релевантный фильм (#17155 п. 6.1). Только для авторизованного пользователя (#17155 п. 1.1,\n#17243\
+        \ п. 4.3, 5.5): без сессии - 401, frontend открывает форму входа.\n\n**Время.** Запрос синхронный:\
+        \ один HTTP-запрос без очереди и опроса статуса (wiki\n`Стек_технологий`, разд. 7). Ответ - не\
+        \ дольше 15 с для 95% запросов (#17093 п. 2.5),\nотсчет с момента, когда тело запроса получено\
+        \ целиком. Загрузка файла до 20 МБ - не\nдольше 10 с (#17093 п. 3.3). При перегрузке 503 `SERVER_BUSY`\
+        \ приходит не дольше чем\nчерез 5 с (#17093 п. 5.1). Лимит - 100 запросов в минуту на сессию (#17094\
+        \ п. 3.4).\n\n**Запись с микрофона** (#17155 п. 3.2). Браузеры пишут звук в WEBM (Chrome) или\
+        \ OGG\n(Firefox), а WEBM в #17155 п. 4.2.2 нет. Поэтому frontend перекодирует запись в WAV и\n\
+        отправляет в поле `file`, как выбранный файл. 10 с в WAV - 1-2 МБ, в лимит 20 МБ\nукладывается.\n\
+        \n**Ограничения и ошибки** (#17155 п. 4.2, 8.1). 1 МБ = 1 048 576 байт, границы\nвключительно.\
+        \ Формат определяется по содержимому файла, а не по расширению. Если\nнарушений несколько, в ответе\
+        \ одно - первое в порядке проверки: наличие файла, число\nфайлов, размер, формат, длительность,\
+        \ целостность. Длительность и целостность проверяет\nML-сервис (`contracts/backend-ml.md`, разд.\
+        \ 2).\n\n| #17155 | Условие | HTTP | code |\n|---|---|---|---|\n| 8.1.1 | аудиофрагмент не загружен\
+        \ и не записан | 400 | `FILE_REQUIRED` |\n| 8.1.2 | больше одного файла | 400 | `TOO_MANY_FILES`\
+        \ |\n| 8.1.3 | формат не MP3, WAV, OGG или M4A | 415 | `UNSUPPORTED_FORMAT` |\n| 8.1.4 | длительность\
+        \ больше 10 с | 422 | `AUDIO_TOO_LONG` |\n| 8.1.5 | размер больше 20 МБ | 413 | `FILE_TOO_LARGE`\
+        \ |\n| 8.1.6 | файл поврежден или не обрабатывается | 422 | `FILE_CORRUPTED` |\n| 8.1.7 | нет\
+        \ доступа к микрофону | - | - |\n\n8.1.7 проверяет браузер: без разрешения записи нет, запрос\
+        \ не отправляется. Frontend\nпоказывает сообщение в области сообщений (#17155 п. 8.2) и оставляет\
+        \ возможность разрешить\nдоступ или загрузить файл (п. 8.3).\n\nПример запроса:\n\n```\ncurl -X\
+        \ POST https://<host>/api/v1/search/audio \\\n  -b 'dv_session=<идентификатор сессии>' \\\n  -F\
+        \ 'file=@clip.mp3;type=audio/mpeg'\n```\n"
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchAudioRequest'
+            encoding:
+              file:
+                contentType: audio/mpeg, audio/wav, audio/ogg, audio/mp4
+      responses:
+        '200':
+          description: 'Поиск выполнен. Пустой `results` - релевантный фильм не найден (#17155 п. 7.1):
+            это не ошибка, frontend показывает сообщение об отсутствии результата.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Файла нет или их больше одного (#17155 п. 8.1.1, 8.1.2).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 'Файл больше 20 МБ (#17155 п. 8.1.5). Тело больше лимита nginx (`client_max_body_size`,
+            wiki `Nginx`) отклоняет nginx, ответ тот же: JSON с кодом `FILE_TOO_LARGE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '415':
+          description: Формат не MP3, WAV, OGG или M4A (#17155 п. 8.1.3).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '422':
+          description: Аудио длиннее 10 с (#17155 п. 8.1.4) или файл поврежден и не может быть обработан
+            (#17155 п. 8.1.6).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+  /search/text:
+    post:
+      operationId: searchByText
+      tags:
+      - search
+      summary: Поиск фильма по текстовому описанию
+      description: "В Sprint 1 не реализуется. Описан заранее: это единственный режим, доступный гостю.\n\
+        \nОписание сюжета, сцены, персонажей, реплик, жанра или года (#17152 п. 3.1-3.3) - на выходе\n\
+        до 10 фильмов по убыванию релевантности (#17152 п. 4.3, 4.4). Доступен гостю и\nавторизованному\
+        \ пользователю (#17152 п. 1.1, #17243 п. 4.1, 5.1), поэтому `security: []`:\nсессия не нужна,\
+        \ 401 здесь не бывает.\n\n**Время.** Ответ - не дольше 5 с для 95% запросов (#17093 п. 2.2). Лимит\
+        \ - 100 запросов\nв минуту на сессию, для гостя на IP (#17094 п. 3.4, wiki `Nginx`).\n\n**Ограничения\
+        \ и ошибки** (#17152 п. 3.4, 7.1). Длина считается в символах Unicode после\nобрезки пробелов\
+        \ по краям, строка из одних пробелов - пустой запрос. Проверки идут в\nпорядке таблицы, в ответе\
+        \ одна ошибка.\n\n| #17152 | Условие | HTTP | code |\n|---|---|---|---|\n| 7.1.1 | запрос пустой\
+        \ | 400 | `QUERY_EMPTY` |\n| 7.1.2 | меньше 3 символов | 422 | `QUERY_TOO_SHORT` |\n| 7.1.3 |\
+        \ больше 250 символов | 422 | `QUERY_TOO_LONG` |\n| 7.1.4 | недопустимое или вредоносное содержимое\
+        \ | 422 | `QUERY_NOT_ALLOWED` |\n\nКритерии 7.1.4 в требованиях не заданы: пока их нет, backend\
+        \ этот код не возвращает.\n\nПример запроса:\n\n```\ncurl -X POST https://<host>/api/v1/search/text\
+        \ \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"query\": \"фильм, где хакеру предлагают\
+        \ выбрать красную или синюю таблетку\"}'\n```\n"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTextRequest'
+      responses:
+        '200':
+          description: 'Поиск выполнен. Пустой `results` - ничего не найдено (#17152 п. 6.1): это не ошибка,
+            подсказку из #17152 п. 6.4 показывает frontend.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Запрос пустой (#17152 п. 7.1.1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '422':
+          description: Запрос короче 3 или длиннее 250 символов либо содержит недопустимое содержимое
+            (#17152 п. 7.1.2-7.1.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      operationId: registerUser
+      summary: Регистрация по имени пользователя, email и паролю
+      description: '#17148 п. 2. Создает учетную запись со статусом «Не подтверждена», сохраняет год рождения
+
+        и ставит в очередь письмо со ссылкой подтверждения (#17148 п. 2.2 шаг 9, п. 2.5). Сессия
+
+        не создается: вход - после подтверждения email.
+
+
+        После 201 клиент показывает «На адрес {email} отправлено письмо. Перейдите по ссылке в
+
+        письме для завершения регистрации» и кнопку «Отправить повторно», доступную через
+
+        `resend_after` секунд (#17148 п. 2.2 шаг 10).
+
+        '
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          description: Учетная запись создана, письмо поставлено в очередь.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthConfirmationSent'
+        '400':
+          description: Нарушены правила полей (#17148 п. 2.3, 2.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email или имя пользователя заняты (#17148 п. 2.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/confirm-email:
+    post:
+      tags:
+      - Auth
+      operationId: confirmEmail
+      summary: Подтверждение email по ссылке из письма
+      description: 'Ссылка в письме ведет на страницу SPA `/confirm-email?token=...` (маршрут - предложение,
+
+        согласуется в #17634), страница отправляет токен сюда. Ссылка прямо на API с GET не
+
+        подходит: почтовые сканеры открывают ссылки из писем и израсходовали бы токен, а cookie
+
+        сессии досталась бы сканеру.
+
+
+        Успех (#17148 п. 2.2 шаг 12, п. 2.5): статус «Активна», создана сессия. Клиент уходит на
+
+        главную с уведомлением «Email подтверждён. Добро пожаловать в DejaView!».
+
+
+        Ссылка живет 24 ч, действует только последняя отправленная (#17148 п. 2.5). Истекшая,
+
+        замененная новой или уже использованная ссылка - `410 AUTH_CONFIRMATION_LINK_EXPIRED`:
+
+        клиент показывает «Срок действия ссылки истёк» и кнопку «Отправить новую ссылку»
+
+        (`POST /auth/resend-confirmation` с этим же токеном). Использованную ссылку требования не
+
+        описывают, ответ как для истекшей (допущение, по аналогии с #17150 п. 2.2).
+
+        '
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '410':
+          description: Ссылка истекла, заменена новой или уже использована (#17148 п. 2.5).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/resend-confirmation:
+    post:
+      tags:
+      - Auth
+      operationId: resendEmailConfirmation
+      summary: Повторная отправка письма подтверждения
+      description: "Кнопки «Отправить повторно» и «Отправить новую ссылку» (#17148 п. 2.2 шаг 10, п. 2.5).\n\
+        Что передает клиент:\n- страница после регистрации - `login` = email из формы;\n- ошибка входа\
+        \ `AUTH_EMAIL_NOT_CONFIRMED` - `login` из формы входа, там может быть имя\n  пользователя (#17148\
+        \ п. 2.5, #17149 п. 2.4);\n- страница истекшей ссылки - `token` из этой ссылки. Сервер находит\
+        \ по нему учетную\n  запись и после истечения срока.\n\nНовая ссылка аннулирует предыдущую (#17148\
+        \ п. 2.5). Письмо уходит не чаще раза в 60\nсекунд (#17148 п. 2.2 шаг 10): если 60 секунд не прошло,\
+        \ письмо не отправляется, а\n`resend_after` - остаток. Если учетной записи нет или она уже подтверждена,\
+        \ письмо не\nотправляется, ответ такой же, как при отправке.\n"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthResendConfirmationRequest'
+      responses:
+        '202':
+          description: Запрос принят, `resend_after` - когда можно повторить.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthConfirmationSent'
+        '400':
+          description: Неверный формат `login` (#17149 п. 2.3).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      operationId: login
+      summary: Вход по имени пользователя или email и паролю
+      description: "#17149 п. 2. Успех - новая сессия; прежняя сессия из cookie, если была, удаляется.\n\
+        \n**Защита от подбора** (#17149 п. 2.5, #17094 п. 3.3). Счетчик неудачных попыток подряд\nведется\
+        \ на учетную запись, найденную по `login`. Порядок проверок:\n1. Вход заблокирован после 5 неудачных\
+        \ попыток - `429 AUTH_LOGIN_LOCKED` с `Retry-After`,\n   пароль не проверяется. Блокировка 15\
+        \ минут.\n2. После 3 неудачных попыток вход требует CAPTCHA. Без `captcha_token` -\n   `403 AUTH_CAPTCHA_REQUIRED`,\
+        \ с непрошедшим проверку токеном - `403 AUTH_CAPTCHA_INVALID`.\n   Эти ответы неудачной попыткой\
+        \ не считаются.\n3. Неверный пароль - `400 AUTH_INVALID_CREDENTIALS`, счетчик +1. Текст по виду\
+        \ `login`:\n   с `@` - про email, без - про имя пользователя (#17149 п. 2.4). В ответе\n   `captcha_required:\
+        \ true`, если следующая попытка уже требует CAPTCHA: клиент\n   показывает виджет вместе с ошибкой\
+        \ (#17149 п. 2.2 шаг 8). Пятая неудачная попытка подряд\n   сразу отвечает `429 AUTH_LOGIN_LOCKED`.\n\
+        4. Верный пароль, статус «Не подтверждена» - `403 AUTH_EMAIL_NOT_CONFIRMED`, клиент\n   показывает\
+        \ кнопку «Отправить новую ссылку» (`POST /auth/resend-confirmation` с тем же\n   `login`). Заблокирована\
+        \ - `403 AUTH_ACCOUNT_BLOCKED`. Эти статусы видны только после\n   верного пароля.\n5. Успешный\
+        \ вход или конец блокировки сбрасывают счетчик (#17149 п. 2.5). Верный пароль\n   в шаге 4 тоже\
+        \ сбрасывает: это не подбор (допущение).\n\nЕсли `login` не найден или у учетной записи нет пароля\
+        \ (создана через OIDC), ответ\n`AUTH_INVALID_CREDENTIALS`. Для несуществующего `login` счетчика\
+        \ нет, CAPTCHA и\nблокировка не включаются: занятость email и имени и так видна при регистрации\n\
+        (#17148 п. 2.4).\n\n**CAPTCHA.** Виджет Yandex SmartCaptcha на клиенте, ключ клиента задается\
+        \ при сборке\nfrontend. Токен из виджета клиент кладет в `captcha_token`, backend проверяет его\n\
+        запросом к SmartCaptcha (wiki `API_service`). Отдельного запроса «нужна ли CAPTCHA» нет:\nклиент\
+        \ узнает об этом из `captcha_required` или кода `AUTH_CAPTCHA_REQUIRED`, после\nпрохождения виджета\
+        \ отправляет форму снова.\n\n**Привязка OIDC.** Если есть cookie `dv_oidc` с исходом `link_required`\
+        \ (тег OIDC) и вход\nвыполнен в учетную запись с тем же email, провайдер привязывается к ней (#17148\
+        \ п. 3.2\nшаг 7), cookie стирается. Вход в другую учетную запись привязку отменяет.\n"
+      security: []
+      parameters:
+      - name: dv_oidc
+        in: cookie
+        required: false
+        description: Есть, если вход идет после исхода OIDC `link_required`.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          description: Пустые поля или неверные учетные данные (#17149 п. 2.3, 2.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginError'
+        '403':
+          description: Нужна CAPTCHA, email не подтвержден или учетная запись заблокирована.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginError'
+        '429':
+          description: '`AUTH_LOGIN_LOCKED` - вход заблокирован после 5 неудачных попыток подряд
+
+            (#17149 п. 2.4, 2.5). `{N}` - сколько минут осталось, с округлением вверх,
+
+            `Retry-After` - то же в секундах, не больше 900. С тем же HTTP-кодом приходит общий
+
+            лимит запросов nginx (`TooManyRequests`, `RATE_LIMITED`), клиент различает их по `code`.
+
+            '
+          headers:
+            Retry-After:
+              description: Через сколько секунд можно повторить вход.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      operationId: logout
+      summary: Выход
+      description: 'Завершает текущую сессию (#17151): запись удаляется, cookie стирается. Клиент уходит
+        на
+
+        главную как гость. Другие сессии пользователя остаются: выход со всех устройств
+
+        требованиями не задан (вопрос в комментарии к #17151).
+
+
+        401 (сессия уже истекла) клиент считает успешным выходом: окно входа не открывает.
+
+        '
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          description: Сессия завершена.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionClearCookie'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/session:
+    get:
+      tags:
+      - Auth
+      operationId: getSession
+      summary: Текущая сессия и пользователь
+      description: 'Клиент вызывает при загрузке SPA, чтобы понять, гость он или авторизован: cookie
+
+        `HttpOnly`, из JavaScript ее не видно. По ответу шапка показывает аватар или кнопки
+
+        «Войти» и «Зарегистрироваться» (#17149 п. 2.6, #17151 п. 1 шаг 5). В требованиях такой
+
+        операции нет, она нужна из-за `HttpOnly` (допущение).
+
+        '
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Пользователь авторизован.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+        '401':
+          description: 'Гость или сессия недействительна (#17094 п. 1.1, 1.3). Такой же ответ у любой
+
+            операции с `sessionCookie` (общий ответ `Unauthorized`), правила - в теге Auth.
+
+            '
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionClearCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/oidc/{provider}/start:
+    get:
+      tags:
+      - OIDC
+      operationId: startOidcLogin
+      summary: Начало входа через OIDC-провайдера
+      description: 'Кнопка «Продолжить с Google / Яндекс / VK» (#17148 п. 3.2 шаги 3-4, #17149 п. 3.1).
+        Это
+
+        переход браузера, а не запрос из JavaScript. Backend создает запись со `state` и PKCE
+
+        `code_verifier`, ставит cookie `dv_oidc` и отправляет браузер на страницу авторизации
+
+        провайдера. Запрашиваются email и имя профиля (#17148 п. 3.2 шаг 7).
+
+        '
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcProviderPath'
+      responses:
+        '302':
+          description: Переход к провайдеру.
+          headers:
+            Location:
+              description: 'Страница авторизации провайдера с `client_id`, `redirect_uri`, `state`,
+
+                `code_challenge` (S256).
+
+                '
+              schema:
+                type: string
+            Set-Cookie:
+              description: '`dv_oidc=<id>; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth; Max-Age=1800`.'
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/oidc/{provider}/callback:
+    get:
+      tags:
+      - OIDC
+      operationId: handleOidcCallback
+      summary: Возврат от OIDC-провайдера
+      description: '`redirect_uri`, зарегистрированный у провайдера:
+
+        `https://<домен>/api/v1/auth/oidc/{provider}/callback`. Backend проверяет `state` по
+
+        cookie `dv_oidc`, меняет код на токены, запрашивает профиль и ищет учетную запись
+
+        (#17148 п. 3.2 шаги 6-7, #17149 п. 3.1 шаг 7).
+
+
+        Ответ - всегда 302 на страницу SPA `/auth/oidc` с параметрами `provider` и `result`,
+
+        JSON не возвращается, в том числе при ошибке. Значения `result` - в теге OIDC. Код и
+
+        описание ошибки провайдера наружу не передаются (#17094 п. 4.3).
+
+        '
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcProviderPath'
+      - name: code
+        in: query
+        required: false
+        description: Авторизационный код, если пользователь дал доступ.
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        description: Значение `state` из запроса к провайдеру. Нет или не совпало - `result=error`.
+        schema:
+          type: string
+      - name: error
+        in: query
+        required: false
+        description: Ошибка провайдера, например `access_denied` при отказе (#17148 п. 3.4).
+        schema:
+          type: string
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      responses:
+        '302':
+          description: Переход на страницу SPA с исходом входа.
+          headers:
+            Location:
+              schema:
+                type: string
+            Set-Cookie:
+              description: '`success` - `dv_session` (как в `SessionCreated`), `dv_oidc` стирается;
+
+                `registration_required`, `link_required` - `dv_oidc` продлевается на 30 минут;
+
+                остальные исходы - `dv_oidc` стирается.
+
+                '
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /auth/oidc/pending:
+    get:
+      tags:
+      - OIDC
+      operationId: getOidcPending
+      summary: Данные незавершенного входа через OIDC
+      description: 'Для страниц после исходов `registration_required` и `link_required`: предзаполненное
+        имя
+
+        пользователя (#17148 п. 3.2 шаг 8) или email для сообщения о привязке (п. 3.2 шаг 7).
+
+        Email не передается в адресе редиректа, чтобы не попадать в историю браузера и логи.
+
+        '
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      responses:
+        '200':
+          description: Данные для страницы.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthOidcPending'
+        '410':
+          $ref: '#/components/responses/AuthOidcExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/oidc/complete:
+    post:
+      tags:
+      - OIDC
+      operationId: completeOidcRegistration
+      summary: Завершение регистрации через OIDC
+      description: 'Кнопка «Продолжить» на странице «Завершение регистрации» (#17148 п. 3.2 шаги 8-10).
+        Имя
+
+        пользователя и год рождения проверяются как в #17148 п. 2.3.
+
+
+        Успех: учетная запись со статусом «Активна» без подтверждения email, провайдер привязан,
+
+        год рождения сохранен, создана сессия, `dv_oidc` стирается (#17148 п. 3.2, 3.3). Клиент
+
+        уходит на главную.
+
+        '
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthOidcCompleteRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          description: Нарушены правила полей (#17148 п. 2.3, 2.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Имя пользователя занято (#17148 п. 2.4). `AUTH_EMAIL_TAKEN` - если учетную запись
+            с
+
+            этим email успели зарегистрировать, пока пользователь был на странице.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          $ref: '#/components/responses/AuthOidcExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/password-reset/request:
+    post:
+      tags:
+      - Password
+      operationId: requestPasswordReset
+      summary: Запрос ссылки для сброса пароля
+      description: '#17150 п. 1. Ответ всегда 202 без тела, есть учетная запись или нет (#17150 п. 1.2
+
+        шаг 8). Клиент показывает «Если учётная запись с таким email существует, мы отправили
+
+        ссылку для восстановления пароля. Проверьте почту».
+
+
+        Если учетная запись найдена, письмо со ссылкой ставится в очередь. Ссылка живет 1 ч,
+
+        действует только последняя (#17150 п. 1.2 шаг 9). Письмо уходит через очередь, поэтому
+
+        время ответа не зависит от того, найден ли email (wiki «Стек технологий», разд. 7).
+
+        '
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthPasswordResetRequest'
+      responses:
+        '202':
+          description: Запрос принят.
+        '400':
+          description: Пустое поле или неверный формат (#17150 п. 1.2 шаг 4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/password-reset/check:
+    post:
+      tags:
+      - Password
+      operationId: checkPasswordResetToken
+      summary: Проверка ссылки сброса пароля
+      description: 'Страница SPA по ссылке из письма проверяет токен до показа формы «Новый пароль»
+
+        (#17150 п. 2.2 шаг 2). Токен не расходуется.
+
+        '
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+      responses:
+        '204':
+          description: Ссылка действительна, можно показывать форму.
+        '410':
+          $ref: '#/components/responses/AuthResetLinkExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/password-reset/complete:
+    post:
+      tags:
+      - Password
+      operationId: completePasswordReset
+      summary: Установка нового пароля по ссылке
+      description: '#17150 п. 2. Успех (п. 2.5): пароль обновлен, все сессии пользователя завершены,
+
+        создана новая, в очередь поставлено письмо «Пароль вашей учётной записи DejaView был
+
+        изменён. Если это были не вы, немедленно восстановите пароль». Клиент уходит на главную
+
+        с уведомлением «Пароль успешно изменён».
+
+
+        Если учетная запись не подтверждена, сброс подтверждает email: владение ящиком
+
+        доказано переходом по ссылке (допущение, в #17150 случай не описан).
+
+        '
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthPasswordResetCompleteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          description: Нарушены правила пароля или он совпадает с текущим (#17150 п. 2.3, 2.4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          $ref: '#/components/responses/AuthResetLinkExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/password:
+    put:
+      tags:
+      - Password
+      operationId: changePassword
+      summary: Смена пароля из профиля
+      description: '#17150 п. 3. Успех (п. 3.3): пароль обновлен, все сессии пользователя, кроме текущей,
+
+        завершены, в очередь поставлено письмо о смене пароля. Клиент показывает «Пароль
+
+        успешно изменён».
+
+
+        Если пароля не было (`has_password: false`), `current_password` не передается, операция
+
+        задает пароль (#17150 п. 3.1).
+
+        '
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPasswordChangeRequest'
+      responses:
+        '204':
+          description: Пароль изменен.
+        '400':
+          description: Нарушены правила или неверен текущий пароль (#17150 п. 3.2).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /movies/{movie_id}:
+    get:
+      operationId: getMovie
+      tags:
+      - Movies
+      summary: Карточка фильма
+      description: 'Данные для страницы фильма: блоки 1, 3, 8, 9, 10 #17193. По `movie_id` из выдачи поиска
+
+        frontend открывает карточку (#17241).
+
+
+        **Доступ.** Карточка открыта гостю, поэтому `security: []`: гость видит страницу, окно
+
+        входа открывается только на действие - оценку, списки, отзыв (#17193 блоки 5, 6, 7, 12).
+
+        Эти действия в Sprint 1 не описываются (#17630 п. 6).
+
+
+        **Источник.** Backend берет фильм из PostgreSQL (кеш TMDB, #17393 п. 2). Фильма там нет -
+
+        запрашивает TMDB по `movie_id`, сохраняет в `movies` и отдает карточку (#17241). TMDB
+
+        такого id не знает - 404. TMDB недоступен - 503, если фильма нет в кеше (#17296).
+
+
+        **Язык.** Названия, жанры, страны и описание - на русском: каталог собирается с
+
+        `language=ru-RU` (#17640), в `movies` одна локаль (#17627).
+
+
+        | Ситуация | HTTP | code |
+
+        |---|---|---|
+
+        | фильм есть в PostgreSQL или получен из TMDB | 200 | - |
+
+        | `movie_id` не целое положительное число или TMDB его не знает | 404 | `MOVIE_NOT_FOUND` |
+
+        | фильма нет в кеше, TMDB недоступен | 503 | `MOVIE_UNAVAILABLE` |
+
+
+        Пример запроса:
+
+
+        ```
+
+        curl https://<host>/api/v1/movies/157336
+
+        ```
+
+        '
+      security: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        description: Идентификатор фильма TMDB (#17241).
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '200':
+          description: Карточка фильма.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieCard'
+        '404':
+          description: Фильма с таким `movie_id` нет ни в PostgreSQL, ни в TMDB, или `movie_id` не целое
+            положительное число. Frontend показывает сообщение вместо карточки.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: 'Фильма нет в кеше, TMDB недоступен: вызовы к TMDB приостановлены или он не ответил
+            (#17296, действия по смягчению п. 3). Фильм из кеша отдается и при недоступном TMDB.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /movies/{movie_id}/reviews:
+    get:
+      operationId: listMovieReviews
+      tags:
+      - Reviews
+      summary: Отзывы о фильме
+      description: 'Блок «Отзывы» на странице фильма (#17239, блок 13 #17193): по 10 отзывов, кнопка «Еще
+
+        отзывы» - следующая страница с той же сортировкой. Отзыв пишут в Sprint 5 (#17029), здесь
+
+        только чтение.
+
+
+        **Доступ.** Список открыт гостю (`security: []`). Если в запросе действующая сессия,
+
+        собственный отзыв пользователя в список не входит: он показывается первым отдельно
+
+        (#17029 п. 3), операцию для него добавит Sprint 5.
+
+
+        **Сортировка** (#17239), при равенстве - от новых отзывов к старым:
+
+
+        | `sort` | Порядок |
+
+        |---|---|
+
+        | `best`, по умолчанию | больше реакций «палец вверх» |
+
+        | `worst` | больше реакций «палец вниз» |
+
+        | `newest` | по дате создания, сначала новые |
+
+        | `oldest` | по дате создания, сначала старые |
+
+
+        Допущения: в #17239 для «Сначала худшие» правило равенства говорит о положительных
+
+        реакциях - читаем «негативных». «Отображаются только отзывы в порядке убывания реакций» -
+
+        порядок, а не фильтр: отзыв без реакций тоже в списке.
+
+
+        **Страницы.** `page` с 1, на странице до 10 отзывов, `has_more` - есть ли следующая.
+
+        Реакции между запросами могут поменяться, и на стыке страниц отзыв повторится или
+
+        пропадет: при числе отзывов на фильм это допустимо (допущение).
+
+
+        | Ситуация | HTTP | code |
+
+        |---|---|---|
+
+        | отзывы есть или их нет, в том числе фильма нет в `movies` | 200 | - |
+
+        | `movie_id` не целое положительное число | 404 | `MOVIE_NOT_FOUND` |
+
+        | `sort` не из списка или `page` не целое число от 1 | 400 | `INVALID_PARAMETER` |
+
+
+        Пример запроса:
+
+
+        ```
+
+        curl ''https://<host>/api/v1/movies/157336/reviews?sort=newest&page=2''
+
+        ```
+
+        '
+      security: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        description: Идентификатор фильма TMDB (#17241).
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      - name: sort
+        in: query
+        required: false
+        description: Порядок отзывов, см. описание операции.
+        schema:
+          type: string
+          enum:
+          - best
+          - worst
+          - newest
+          - oldest
+          default: best
+      - name: page
+        in: query
+        required: false
+        description: Номер страницы по 10 отзывов, с 1.
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      responses:
+        '200':
+          description: Страница отзывов.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieReviewsPage'
+        '400':
+          description: '`sort` или `page` вне допустимых значений.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: '`movie_id` не целое положительное число.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/lists/{list_type}:
+    get:
+      operationId: listUserMovies
+      tags:
+      - Lists
+      summary: Фильмы списка
+      description: "Список «Хочу посмотреть» или «Просмотрено» в профиле (#17030 п. 2.2, 2.4): по 24 фильма\n\
+        на странице, сортировка и поиск по названию. На другой странице frontend передает те же\n`sort`\
+        \ и `q` (#17030 п. 2.4.4.1).\n\n**Сортировка** (#17030 п. 2.4.6), при равенстве - от недавно добавленных\
+        \ к ранним:\n\n| `sort` | Порядок |\n|---|---|\n| `newest`, по умолчанию | по дате добавления\
+        \ в список, сначала новые |\n| `oldest` | по дате добавления, сначала старые |\n| `title_asc`\
+        \ | по названию, А-Я |\n| `title_desc` | по названию, Я-А |\n| `best` | по `average_rating`, сначала\
+        \ лучшие |\n| `worst` | по `average_rating`, сначала худшие |\n\nНазвание сравнивается по правилам\
+        \ русского языка (`title` в `movies` - ICU `ru-RU`). Фильмы\nбез оценок в `best` и `worst` идут\
+        \ после оцененных (допущение).\n\n**Поиск** (#17030 п. 2.4.7): `q` - часть названия на русском\
+        \ (`title`, как на плитке), без\nучета регистра. Пробелы по краям `q` не учитываются, пустой `q`\
+        \ - весь список («Очистить»,\nп. 2.4.7.4).\n\n**Страницы.** `page` с 1, на странице до 24 фильмов\
+        \ (#17030 п. 2.4.2). Число страниц\nfrontend считает из `total`. Страница за последней - пустой\
+        \ `movies`.\n\n| Ситуация | HTTP | code |\n|---|---|---|\n| фильмы есть или список пуст | 200\
+        \ | - |\n| `list_type` или `sort` не из списка, `page` не целое число от 1 | 400 | `INVALID_PARAMETER`\
+        \ |\n| нет сессии или она истекла | 401 | `SESSION_REQUIRED`, `SESSION_EXPIRED` |\n\nПример запроса:\n\
+        \n```\ncurl -b 'dv_session=<id>' -G 'https://<host>/api/v1/users/me/lists/watched' \\\n  -d sort=title_asc\
+        \ --data-urlencode 'q=матр' -d page=2\n```\n"
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/ListTypePath'
+      - name: sort
+        in: query
+        required: false
+        description: Порядок фильмов, см. описание операции.
+        schema:
+          type: string
+          enum:
+          - newest
+          - oldest
+          - title_asc
+          - title_desc
+          - best
+          - worst
+          default: newest
+      - name: q
+        in: query
+        required: false
+        description: Часть названия фильма, см. описание операции.
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        description: Номер страницы по 24 фильма, с 1.
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      responses:
+        '200':
+          description: Страница списка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListPage'
+        '400':
+          description: '`list_type`, `sort` или `page` вне допустимых значений.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/lists/{list_type}/{movie_id}:
+    parameters:
+    - $ref: '#/components/parameters/ListTypePath'
+    - name: movie_id
+      in: path
+      required: true
+      description: Идентификатор фильма TMDB (#17241).
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    put:
+      operationId: addMovieToList
+      tags:
+      - Lists
+      summary: Добавить фильм в список
+      description: 'Нажатие на чекбокс «Хочу посмотреть» или «Просмотрено» на странице фильма (#17026
+        п. 1,
+
+        #17027 п. 1, блоки 6, 7 #17193). Фильм попадает в список с текущей датой добавления.
+
+
+        Повторное добавление ничего не меняет: дубля нет, дата добавления прежняя, ответ тот же.
+
+        Поэтому `PUT`: запрос можно безопасно повторить, например после входа (#17026 п. 3).
+
+
+        Списки независимы, фильм может быть в обоих (`contracts/db-schema.md`). Оценку фильма
+
+        отметка не меняет (#17027 п. 1). Добавление пишется в историю действий (`user_actions`)
+
+        в той же транзакции, повторное - не пишется.
+
+
+        Фильм должен быть в `movies`. Страница фильма загружает карточку `GET /movies/{movie_id}`,
+
+        а она сохраняет фильм из TMDB в `movies` (#17241), поэтому со страницы фильма 404 не бывает.
+
+
+        | Ситуация | HTTP | code |
+
+        |---|---|---|
+
+        | фильм добавлен или уже был в списке | 204 | - |
+
+        | `list_type` не из списка | 400 | `INVALID_PARAMETER` |
+
+        | нет сессии или она истекла | 401 | `SESSION_REQUIRED`, `SESSION_EXPIRED` |
+
+        | `movie_id` не целое положительное число или фильма нет в `movies` | 404 | `MOVIE_NOT_FOUND`
+        |
+
+
+        Пример запроса:
+
+
+        ```
+
+        curl -X PUT -b ''dv_session=<id>'' https://<host>/api/v1/users/me/lists/want_to_watch/157336
+
+        ```
+
+        '
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          description: Фильм в списке.
+        '400':
+          description: '`list_type` не из списка.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: '`movie_id` не целое положительное число или фильма нет в `movies`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      operationId: removeMovieFromList
+      tags:
+      - Lists
+      summary: Убрать фильм из списка
+      description: 'Повторное нажатие на чекбокс на странице фильма или кнопка «Удалить» у фильма в профиле
+
+        (#17026 п. 2, #17027 п. 2). Подтверждения нет.
+
+
+        Фильма в списке нет - тоже 204: результат тот же, запрос можно безопасно повторить.
+
+        Удаление пишется в историю действий (`user_actions`) в той же транзакции, удаление
+
+        отсутствующего - не пишется.
+
+
+        | Ситуация | HTTP | code |
+
+        |---|---|---|
+
+        | фильм удален из списка или его там не было | 204 | - |
+
+        | `list_type` не из списка | 400 | `INVALID_PARAMETER` |
+
+        | нет сессии или она истекла | 401 | `SESSION_REQUIRED`, `SESSION_EXPIRED` |
+
+        | `movie_id` не целое положительное число | 404 | `MOVIE_NOT_FOUND` |
+
+
+        Пример запроса:
+
+
+        ```
+
+        curl -X DELETE -b ''dv_session=<id>'' https://<host>/api/v1/users/me/lists/want_to_watch/157336
+
+        ```
+
+        '
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          description: Фильма в списке нет.
+        '400':
+          description: '`list_type` не из списка.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: '`movie_id` не целое положительное число.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/movies/{movie_id}:
+    get:
+      operationId: getUserMovieState
+      tags:
+      - Lists
+      summary: Фильм в списках пользователя
+      description: 'Состояние чекбоксов «Хочу посмотреть» и «Просмотрено» на странице фильма (блоки 6,
+        7
+
+        #17193). Frontend запрашивает его вместе с карточкой, если пользователь вошел.
+
+
+        Гость операцию не вызывает: у него чекбоксы не установлены, окно входа открывается только
+
+        по нажатию (#17026 п. 3, #17027 п. 3). Поэтому на 401 этой операции frontend окно входа не
+
+        открывает, а показывает чекбоксы гостя.
+
+
+        Отдельная операция, а не поля `MovieCard`: карточка открыта гостю и одинакова для всех, а
+
+        это данные пользователя.
+
+
+        | Ситуация | HTTP | code |
+
+        |---|---|---|
+
+        | фильм в списках или нет, в том числе фильма нет в `movies` | 200 | - |
+
+        | нет сессии или она истекла | 401 | `SESSION_REQUIRED`, `SESSION_EXPIRED` |
+
+        | `movie_id` не целое положительное число | 404 | `MOVIE_NOT_FOUND` |
+
+
+        Пример запроса:
+
+
+        ```
+
+        curl -b ''dv_session=<id>'' https://<host>/api/v1/users/me/movies/157336
+
+        ```
+
+        '
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        description: Идентификатор фильма TMDB (#17241).
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '200':
+          description: Фильм в списках пользователя.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMovieState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: '`movie_id` не целое положительное число.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+tags:
+- name: search
+  description: Поиск фильма по изображению, видео, тексту (#17628) и аудио (#17643).
+- name: Auth
+  description: "Регистрация, подтверждение email, вход, выход, сессия (#17148, #17149, #17151). Sprint\
+    \ 1.\n\n### Сессия\n\n- Серверная: запись в PostgreSQL, в cookie `dv_session` только случайный идентификатор\n\
+    \  (#17094 п. 1.3, wiki «Стек технологий», разд. 5). JWT нет.\n- Cookie: `HttpOnly; Secure; SameSite=Lax;\
+    \ Path=/api/v1; Max-Age=86400`. JavaScript ее не\n  читает, состояние входа клиент узнает через `GET\
+    \ /auth/session`.\n- Срок - 24 ч с момента создания, без продления: #17094 п. 1.3 ограничивает сессию\
+    \ 24\n  часами, скользящее продление этот предел снимает. После истечения нужен новый вход.\n- Сессия\
+    \ создается при входе, подтверждении email, завершении входа через OIDC и сбросе\n  пароля. Идентификатор\
+    \ каждый раз новый, сессия из cookie запроса, если была, удаляется.\n- Сессия завершается: выход (#17151,\
+    \ только текущая), истечение срока, сброс пароля\n  (#17150 п. 2.5, все сессии), смена пароля из профиля\
+    \ (#17150 п. 3.3, все, кроме текущей).\n- `SameSite=Lax`: браузер не отправляет cookie в POST с чужого\
+    \ сайта. CORS - только домен\n  приложения (#17094 п. 4.4).\n\n### Без авторизации и с истекшей сессией\n\
+    \nОперации с `security: [{sessionCookie: []}]` доступны только авторизованному пользователю\n(#17094\
+    \ п. 1.1, 1.4). Операции с `security: []` открыты гостю.\n\n| Запрос к операции с `sessionCookie`\
+    \ | Ответ |\n|---|---|\n| нет cookie `dv_session` | 401 `SESSION_REQUIRED` |\n| сессия истекла, завершена\
+    \ или не найдена | 401 `SESSION_EXPIRED` и `Set-Cookie` с `Max-Age=0` |\n\nОперация гостя с недействительной\
+    \ cookie выполняется как для гостя, cookie стирается.\n\nЧто делает клиент по 401:\n- на действие\
+    \ пользователя (добавить в список, оценить и т.п.) - переходит в состояние\n  гостя, открывает окно\
+    \ входа, после входа повторяет действие (#17149 п. 2.6, #17026 п. 3,\n  #17027 п. 3);\n- на `GET /auth/session`\
+    \ при загрузке SPA и на `POST /auth/logout` - просто показывает\n  гостя, окно входа не открывает.\n\
+    \nПоэтому 401 означает только отсутствие сессии, неверный пароль при входе - 400.\n\n### Контроль\
+    \ прав\n\nРоли две: «Гость» и «Пользователь» (#17148 п. 2.6, #17151 п. 2). Гостю доступны\nоперации\
+    \ с `security: []`, пользователю - все. Свои ресурсы пользователь адресует через\n`/users/me`: владелец\
+    \ берется из сессии, а не из пути или тела. Операций над чужими\nучетными записями в API нет. Проверка\
+    \ прав (#17094 п. 4.1) - проверка сессии на каждом\nзапросе к операции с `sessionCookie` и выборка\
+    \ данных только владельца сессии. Профиль\nдругим пользователям недоступен (#17030 п. 1).\n\n### Ошибки\n\
+    \nТело ошибки - `Error`. `message` клиент показывает как есть: текст на русском\n(#17097 п. 1.2) из\
+    \ требований, без внутренних деталей (#17094 п. 4.3). Стек, SQL, пути,\nответы OIDC-провайдеров и\
+    \ SmartCaptcha наружу не уходят, непредвиденная ошибка -\n`500 INTERNAL_ERROR`. Сервер возвращает\
+    \ одну ошибку, первую найденную: она показывается\nнад формой (#17148 п. 2.2 шаг 8, #17149 п. 2.2\
+    \ шаг 10), `field` - для подсветки поля.\n\nСервер повторяет клиентские проверки (#17148 п. 2.3, #17149\
+    \ п. 2.3): клиент можно обойти.\nПравила и тексты по полям - в схемах `AuthUsername`, `AuthEmail`,\
+    \ `AuthBirthYear`,\n`AuthPassword`, `AuthLogin`. Тело не JSON - `400 AUTH_VALIDATION_ERROR`, `field:\
+    \ null`,\n«Произошла ошибка. Попробуйте позже».\n\nHTTP-коды: 400 - исправить ввод, 401 - нет сессии,\
+    \ 403 - состояние учетной записи не\nпозволяет, 409 - занято, 410 - ссылка или ожидание истекли, 429\
+    \ - лимит.\n\n| code | HTTP | Текст | Откуда |\n|---|---|---|---|\n| `AUTH_VALIDATION_ERROR` | 400\
+    \ | по полю, см. схемы | #17148 п. 2.3, #17149 п. 2.3, #17150 п. 1.2, 2.3, 3.2 |\n| `AUTH_BIRTH_YEAR_INVALID`\
+    \ | 400 | «Введите корректный год рождения» | #17148 п. 2.4 |\n| `AUTH_INVALID_CREDENTIALS` | 400\
+    \ | «Неверные имя пользователя или пароль» / «Неверные email или пароль» | #17149 п. 2.4 |\n| `AUTH_PASSWORD_SAME_AS_CURRENT`\
+    \ | 400 | «Новый пароль должен отличаться от текущего» | #17150 п. 2.4, 3.2 |\n| `AUTH_CURRENT_PASSWORD_INVALID`\
+    \ | 400 | «Неверный текущий пароль» | #17150 п. 3.2 |\n| `SESSION_REQUIRED` | 401 | «Войдите, чтобы\
+    \ продолжить» | допущение |\n| `SESSION_EXPIRED` | 401 | «Сессия истекла. Войдите снова» | допущение\
+    \ |\n| `AUTH_EMAIL_NOT_CONFIRMED` | 403 | «Email не подтверждён. Проверьте почту или запросите новую\
+    \ ссылку» | #17148 п. 2.5, #17149 п. 2.4 |\n| `AUTH_ACCOUNT_BLOCKED` | 403 | «Ваша учётная запись\
+    \ заблокирована. Обратитесь в службу поддержки» | #17149 п. 2.4 |\n| `AUTH_CAPTCHA_REQUIRED` | 403\
+    \ | «Подтвердите, что вы не робот» | допущение |\n| `AUTH_CAPTCHA_INVALID` | 403 | «Проверка не пройдена.\
+    \ Попробуйте ещё раз» | допущение |\n| `AUTH_EMAIL_TAKEN` | 409 | «Пользователь с таким email уже\
+    \ существует» | #17148 п. 2.4 |\n| `AUTH_USERNAME_TAKEN` | 409 | «Это имя пользователя уже занято»\
+    \ | #17148 п. 2.4 |\n| `AUTH_CONFIRMATION_LINK_EXPIRED` | 410 | «Срок действия ссылки истёк» | #17148\
+    \ п. 2.5 |\n| `AUTH_OIDC_EXPIRED` | 410 | «Не удалось выполнить вход через {провайдер}. Попробуйте\
+    \ снова или используйте другой способ» | текст #17148 п. 3.4, случай - допущение |\n| `AUTH_RESET_LINK_EXPIRED`\
+    \ | 410 | «Срок действия ссылки истёк. Запросите восстановление пароля повторно» | #17150 п. 2.4 |\n\
+    | `AUTH_LOGIN_LOCKED` | 429 | «Слишком много попыток входа. Повторите через {N} минут» | #17149 п.\
+    \ 2.4 |\n| `RATE_LIMITED` | 429 | «Слишком много запросов. Попробуйте позже» | #17094 п. 3.4, текст\
+    \ - допущение |\n| `INTERNAL_ERROR` | 500 | «Произошла ошибка. Попробуйте позже» | #17148 п. 2.4,\
+    \ #17149 п. 2.4 |\n"
+- name: OIDC
+  description: "Вход и регистрация через Google, Яндекс, VK ID (#17148 п. 3, #17149 п. 3). OAuth2\nauthorization\
+    \ code flow со `state` и PKCE (S256), обмен кода и запрос профиля делает\nbackend (wiki «Стек технологий»,\
+    \ разд. 10).\n\n1. Кнопка провайдера - переход браузера на `GET /auth/oidc/{provider}/start`. Куда\
+    \ вернуть\n   пользователя после входа, SPA запоминает сама до перехода (#17149 п. 2.6).\n2. Backend\
+    \ ставит cookie `dv_oidc` и отправляет браузер к провайдеру.\n3. Провайдер возвращает браузер на `GET\
+    \ /auth/oidc/{provider}/callback`. Backend ищет\n   учетную запись сначала по привязке к аккаунту\
+    \ провайдера (#17149 п. 3.1), затем по\n   email (#17148 п. 3.2), и отправляет браузер на страницу\
+    \ SPA `/auth/oidc` с параметрами\n   `provider` и `result`.\n\n| `result` | Когда | Что делает SPA\
+    \ |\n|---|---|---|\n| `success` | учетная запись привязана к провайдеру и активна | сессия уже создана,\
+    \ возврат на исходную страницу (#17149 п. 3.2) |\n| `registration_required` | нет ни привязки, ни\
+    \ учетной записи с этим email | «Завершение регистрации»: `GET /auth/oidc/pending`, затем `POST /auth/oidc/complete`\
+    \ (#17148 п. 3.2 шаги 8-10) |\n| `link_required` | учетная запись с этим email есть, провайдер не\
+    \ привязан | форма входа с сообщением «Учётная запись с email {email} уже существует. Войдите с паролем,\
+    \ чтобы привязать {провайдер}», email - из `GET /auth/oidc/pending`; после `POST /auth/login` провайдер\
+    \ привязан (#17148 п. 3.2 шаг 7) |\n| `account_blocked` | учетная запись заблокирована | «Ваша учётная\
+    \ запись заблокирована. Обратитесь в службу поддержки» (#17149 п. 3.1) |\n| `error` | отказ пользователя,\
+    \ ошибка или недоступность провайдера, неверный `state` | исходная форма с сообщением «Не удалось\
+    \ выполнить вход через {провайдер}. Попробуйте снова или используйте другой способ» (#17148 п. 3.4,\
+    \ #17149 п. 3.3) |\n\nУчетная запись создается при завершении регистрации, а не при возврате от провайдера:\n\
+    без года рождения регистрация не закончена (#17148 п. 2.6, 3.3). До этого данные\nпровайдера лежат\
+    \ в серверной записи, к браузеру ее привязывает cookie `dv_oidc`\n(таблица `oidc_pending`, #17627).\
+    \ Решение архитектора 27.09: в #17148 п. 3.2 шаг 7\nучетная запись создается сразу, для пользователя\
+    \ разницы нет.\n\nCookie `dv_oidc`: `HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth`, 30 минут\n\
+    (допущение). `SameSite=Lax` нужен, чтобы cookie пришла на callback при переходе с сайта\nпровайдера.\
+    \ В cookie только идентификатор записи со `state`, `code_verifier` и данными\nпрофиля провайдера.\n\
+    \nМаршруты SPA `/auth/oidc` и `/confirm-email` - предложение, согласуются с frontend в #17634.\n"
+- name: Password
+  description: 'Восстановление и смена пароля (#17150). Не входит в Sprint 1 (#17629 п. 8), контракт
+
+    описан заранее.
+
+
+    Ссылка из письма ведет на страницу SPA с токеном в адресе: срок 1 ч, действует только
+
+    последняя (#17150 п. 1.2 шаг 9). Страница проверяет токен (`POST /auth/password-reset/check`)
+
+    и показывает форму «Новый пароль» или сообщение об истекшей ссылке (#17150 п. 2.2 шаг 2).
+
+    '
+- name: Movies
+  description: Карточка фильма (#17630) - блоки 1, 3, 8, 9
+- name: Reviews
+  description: 'Отзывы о фильме (#17239, #17029). Сейчас - список (#18845), написание, редактирование
+    и реакции - Sprint 5.'
+- name: Lists
+  description: 'Списки «Хочу посмотреть» (#17026) и «Просмотрено» (#17027): чекбоксы на странице фильма
+    (блоки 6, 7 #17193) и списки в профиле (#17030 п. 2.2, 2.4), #19128. Только для пользователя, свои
+    списки - через `/users/me` (тег Auth, «Контроль прав»).'

@@ -1,0 +1,7 @@
+{
+  "name": "dejaview-private-design-extractor",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test extract-fig.test.mjs"},
+  "dependencies": {"openfig-core": "0.4.1"}
+}

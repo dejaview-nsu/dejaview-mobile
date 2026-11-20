@@ -1,0 +1,3033 @@
+# Sanitized derivative: examples removed; descriptions use synthetic identities.
+openapi: 3.0.3
+info:
+  title: DejaView API
+  version: 1.4.1
+  description: 'API DejaView: поиск, каталог, пользователи и подписка. Методы с пометкой «вне MVP» спроектированы,
+    но в первую версию мобильного приложения не входят.'
+servers:
+- url: /api/v1
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: dv_session
+      description: Серверная сессия dv_session, 24 часа.
+  schemas:
+    Error:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        field:
+          type: string
+          nullable: true
+    SearchErrorCode:
+      type: string
+      enum:
+      - FILE_REQUIRED
+      - TOO_MANY_FILES
+      - FILE_TOO_LARGE
+      - UNSUPPORTED_FORMAT
+      - VIDEO_TOO_LONG
+      - AUDIO_TOO_LONG
+      - FILE_CORRUPTED
+      - QUERY_EMPTY
+      - QUERY_TOO_SHORT
+      - QUERY_TOO_LONG
+      - QUERY_NOT_ALLOWED
+      - SEARCH_UNAVAILABLE
+      - SERVER_BUSY
+    SearchError:
+      allOf:
+      - $ref: '#/components/schemas/Error'
+      - type: object
+        properties:
+          code:
+            $ref: '#/components/schemas/SearchErrorCode'
+    SearchImageRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: JPG, PNG, WEBP; до 10 МБ.
+    SearchVideoRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: MP4, MOV, WEBM; до 50 МБ, не более 30 с.
+    SearchAudioRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 'MP3, WAV, OGG или M4A; до 20 МБ и до 10 с. Запись микрофона: M4A/AAC.'
+    SearchTextRequest:
+      type: object
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          minLength: 3
+          maxLength: 250
+    SearchResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/MovieSearchResult'
+          description: До 10 фильмов по тексту, до одного по медиа. [] — нет совпадений.
+    MovieSearchResult:
+      type: object
+      required:
+      - movie_id
+      - title
+      - year
+      - poster_url
+      - overview
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+    AuthUsername:
+      type: string
+      minLength: 3
+      maxLength: 30
+      pattern: ^[A-Za-z0-9_]+$
+    AuthEmail:
+      type: string
+      format: email
+      maxLength: 254
+    AuthBirthYear:
+      type: integer
+      minimum: 1900
+      description: От 1900 до текущего года.
+    AuthPassword:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 128
+      pattern: ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).*$
+      description: '8–128 символов: латинские буквы разных регистров, цифра и спецсимвол.'
+    AuthLogin:
+      type: string
+      minLength: 1
+      maxLength: 254
+      anyOf:
+      - type: string
+        pattern: ^[A-Za-z0-9_]{3,30}$
+      - type: string
+        format: email
+      description: Имя пользователя или email.
+    AuthLinkToken:
+      type: string
+      minLength: 1
+    AuthTokenRequest:
+      type: object
+      required:
+      - token
+      properties:
+        token:
+          $ref: '#/components/schemas/AuthLinkToken'
+    AuthRegisterRequest:
+      type: object
+      required:
+      - username
+      - email
+      - birth_year
+      - password
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+        email:
+          $ref: '#/components/schemas/AuthEmail'
+        birth_year:
+          $ref: '#/components/schemas/AuthBirthYear'
+        password:
+          $ref: '#/components/schemas/AuthPassword'
+    AuthConfirmationSent:
+      type: object
+      required:
+      - resend_after
+      properties:
+        resend_after:
+          type: integer
+          minimum: 0
+          maximum: 60
+    AuthResendConfirmationRequest:
+      oneOf:
+      - type: object
+        required:
+        - login
+        properties:
+          login:
+            $ref: '#/components/schemas/AuthLogin'
+      - type: object
+        required:
+        - token
+        properties:
+          token:
+            $ref: '#/components/schemas/AuthLinkToken'
+      description: 'Одно из полей: login или token.'
+    AuthLoginRequest:
+      type: object
+      required:
+      - login
+      - password
+      properties:
+        login:
+          $ref: '#/components/schemas/AuthLogin'
+        password:
+          type: string
+          format: password
+          minLength: 1
+        captcha_token:
+          type: string
+          description: Токен CAPTCHA при повторном входе.
+    AuthLoginError:
+      allOf:
+      - $ref: '#/components/schemas/Error'
+      - type: object
+        required:
+        - captcha_required
+        properties:
+          captcha_required:
+            type: boolean
+    AuthOidcProvider:
+      type: string
+      enum:
+      - google
+      - yandex
+      - vk
+    AuthOidcPending:
+      type: object
+      required:
+      - kind
+      - provider
+      - email
+      - suggested_username
+      properties:
+        kind:
+          type: string
+          enum:
+          - registration
+          - link
+          description: registration — регистрация; link — привязка аккаунта.
+        provider:
+          $ref: '#/components/schemas/AuthOidcProvider'
+        email:
+          type: string
+          format: email
+        suggested_username:
+          type: string
+          nullable: true
+    AuthOidcCompleteRequest:
+      type: object
+      required:
+      - username
+      - birth_year
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+        birth_year:
+          $ref: '#/components/schemas/AuthBirthYear'
+    AuthPasswordResetRequest:
+      type: object
+      required:
+      - login
+      properties:
+        login:
+          $ref: '#/components/schemas/AuthLogin'
+    AuthPasswordResetCompleteRequest:
+      type: object
+      required:
+      - token
+      - new_password
+      properties:
+        token:
+          $ref: '#/components/schemas/AuthLinkToken'
+        new_password:
+          $ref: '#/components/schemas/AuthPassword'
+    UserPasswordChangeRequest:
+      type: object
+      required:
+      - new_password
+      properties:
+        current_password:
+          type: string
+          format: password
+          minLength: 1
+          description: Обязателен, если у пользователя есть пароль.
+        new_password:
+          $ref: '#/components/schemas/AuthPassword'
+    SessionInfo:
+      type: object
+      required:
+      - user
+      - expires_at
+      properties:
+        user:
+          $ref: '#/components/schemas/UserSummary'
+        expires_at:
+          type: string
+          format: date-time
+    UserSummary:
+      type: object
+      required:
+      - username
+      - avatar_url
+      - has_password
+      properties:
+        username:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        has_password:
+          type: boolean
+    MovieCard:
+      type: object
+      required:
+      - movie_id
+      - title
+      - original_title
+      - year
+      - age_rating
+      - poster_url
+      - runtime_min
+      - overview
+      - genres
+      - countries
+      - crew
+      - actors
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          minLength: 1
+        original_title:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          nullable: true
+        age_rating:
+          type: string
+          nullable: true
+          enum:
+          - 0+
+          - 6+
+          - 12+
+          - 16+
+          - 18+
+          - null
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+        runtime_min:
+          type: integer
+          minimum: 1
+          nullable: true
+        overview:
+          type: string
+          minLength: 1
+          nullable: true
+        genres:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieGenre'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieCountry'
+        crew:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieCrewMember'
+        actors:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieActor'
+          description: Не больше 30 актеров.
+    MovieGenre:
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    MovieCountry:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z]{2}$
+        name:
+          type: string
+    MovieCrewMember:
+      type: object
+      required:
+      - person_id
+      - name
+      - role
+      properties:
+        person_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        role:
+          type: string
+          enum:
+          - director
+          - writer
+          - composer
+          - producer
+    MovieActor:
+      type: object
+      required:
+      - person_id
+      - name
+      - character
+      - photo_url
+      properties:
+        person_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        character:
+          type: string
+          nullable: true
+        photo_url:
+          type: string
+          format: uri
+          nullable: true
+    MovieReviewsPage:
+      type: object
+      required:
+      - reviews
+      - has_more
+      properties:
+        reviews:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/MovieReview'
+        has_more:
+          type: boolean
+    MovieReview:
+      type: object
+      required:
+      - review_id
+      - username
+      - created_at
+      - is_edited
+      - verdict
+      - title
+      - body
+      - likes
+      - dislikes
+      properties:
+        review_id:
+          type: integer
+          format: int64
+        username:
+          type: string
+          nullable: true
+          description: null, если профиль автора удален.
+        created_at:
+          type: string
+          format: date-time
+        is_edited:
+          type: boolean
+        verdict:
+          type: string
+          enum:
+          - positive
+          - neutral
+          - negative
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 150
+        body:
+          type: string
+          minLength: 300
+          maxLength: 10000
+        likes:
+          type: integer
+          minimum: 0
+        dislikes:
+          type: integer
+          minimum: 0
+        my_reaction:
+          type: string
+          nullable: true
+          enum:
+          - like
+          - dislike
+          - null
+    MovieTile:
+      type: object
+      required:
+      - movie_id
+      - title
+      - poster_url
+      - year
+      - average_rating
+      - ratings_count
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+        average_rating:
+          type: number
+          format: float
+          nullable: true
+          minimum: 1
+          maximum: 10
+        ratings_count:
+          type: integer
+          minimum: 0
+    PersonalListItem:
+      type: object
+      required:
+      - movie
+      - added_at
+      - my_rating
+      properties:
+        movie:
+          $ref: '#/components/schemas/MovieTile'
+        added_at:
+          type: string
+          format: date-time
+        my_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+    PagedMovies:
+      type: object
+      required:
+      - items
+      - page
+      - total_pages
+      - total_items
+      properties:
+        items:
+          type: array
+          maxItems: 24
+          items:
+            $ref: '#/components/schemas/PersonalListItem'
+        page:
+          type: integer
+          minimum: 1
+        total_pages:
+          type: integer
+          minimum: 0
+        total_items:
+          type: integer
+          minimum: 0
+    MovieMyState:
+      type: object
+      required:
+      - movie_id
+      - in_watchlist
+      - is_watched
+      - my_rating
+      - my_review_id
+      - my_rated_at
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+        in_watchlist:
+          type: boolean
+        is_watched:
+          type: boolean
+        my_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+        my_review_id:
+          type: integer
+          format: int64
+          nullable: true
+        my_rated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Когда выставлена или последний раз изменена оценка. null, если оценки нет.
+    RatingRequest:
+      type: object
+      required:
+      - rating
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 10
+    MovieRatingSummary:
+      type: object
+      required:
+      - movie_id
+      - my_rating
+      - average_rating
+      - ratings_count
+      properties:
+        movie_id:
+          type: integer
+          format: int64
+        my_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+        average_rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+        ratings_count:
+          type: integer
+          minimum: 0
+    CreateReviewRequest:
+      type: object
+      required:
+      - verdict
+      - body
+      properties:
+        verdict:
+          type: string
+          enum:
+          - positive
+          - neutral
+          - negative
+        title:
+          type: string
+          nullable: true
+          maxLength: 150
+          minLength: 1
+          description: Без заголовка передается null.
+        body:
+          type: string
+          minLength: 300
+          maxLength: 10000
+    UpdateReviewRequest:
+      type: object
+      minProperties: 1
+      properties:
+        verdict:
+          type: string
+          enum:
+          - positive
+          - neutral
+          - negative
+        title:
+          type: string
+          nullable: true
+          maxLength: 150
+          minLength: 1
+          description: Без заголовка передается null.
+        body:
+          type: string
+          minLength: 300
+          maxLength: 10000
+    ReviewReactionRequest:
+      type: object
+      required:
+      - reaction
+      properties:
+        reaction:
+          type: string
+          enum:
+          - like
+          - dislike
+    ReviewReactionState:
+      type: object
+      required:
+      - review_id
+      - my_reaction
+      - likes
+      - dislikes
+      properties:
+        review_id:
+          type: integer
+          format: int64
+        my_reaction:
+          type: string
+          nullable: true
+          enum:
+          - like
+          - dislike
+          - null
+        likes:
+          type: integer
+          minimum: 0
+        dislikes:
+          type: integer
+          minimum: 0
+    MyProfile:
+      type: object
+      required:
+      - username
+      - email
+      - birth_year
+      - created_at
+      - avatar_url
+      - has_password
+      - linked_providers
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+        email:
+          $ref: '#/components/schemas/AuthEmail'
+        birth_year:
+          $ref: '#/components/schemas/AuthBirthYear'
+        created_at:
+          type: string
+          format: date-time
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        has_password:
+          type: boolean
+        linked_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthOidcProvider'
+          description: Привязанные внешние провайдеры.
+    UpdateMyProfileRequest:
+      type: object
+      required:
+      - username
+      properties:
+        username:
+          $ref: '#/components/schemas/AuthUsername'
+    AvatarUploadRequest:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: JPG или PNG, до 5 МБ, квадрат от 200×200 до 1024×1024 px.
+    AvatarResponse:
+      type: object
+      required:
+      - avatar_url
+      properties:
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+    MyStatistics:
+      type: object
+      required:
+      - watched_count
+      - watchlist_count
+      - ratings_count
+      - average_rating
+      - reviews_count
+      properties:
+        watched_count:
+          type: integer
+          minimum: 0
+        ratings_count:
+          type: integer
+          minimum: 0
+        average_rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+        reviews_count:
+          type: integer
+          minimum: 0
+        watchlist_count:
+          type: integer
+          minimum: 0
+          description: Количество фильмов в «Хочу посмотреть».
+    MyRatingItem:
+      type: object
+      required:
+      - movie
+      - rating
+      - rated_at
+      properties:
+        movie:
+          $ref: '#/components/schemas/MovieTile'
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 10
+        rated_at:
+          type: string
+          format: date-time
+    MyRatingsPage:
+      type: object
+      required:
+      - items
+      - page
+      - total_pages
+      - total_items
+      properties:
+        items:
+          type: array
+          maxItems: 24
+          items:
+            $ref: '#/components/schemas/MyRatingItem'
+        page:
+          type: integer
+          minimum: 1
+        total_pages:
+          type: integer
+          minimum: 0
+        total_items:
+          type: integer
+          minimum: 0
+    MyReviewItem:
+      type: object
+      required:
+      - movie
+      - review
+      properties:
+        movie:
+          $ref: '#/components/schemas/MovieTile'
+        review:
+          $ref: '#/components/schemas/MovieReview'
+    MyReviewsPage:
+      type: object
+      required:
+      - items
+      - page
+      - total_pages
+      - total_items
+      properties:
+        items:
+          type: array
+          maxItems: 24
+          items:
+            $ref: '#/components/schemas/MyReviewItem'
+        page:
+          type: integer
+          minimum: 1
+        total_pages:
+          type: integer
+          minimum: 0
+        total_items:
+          type: integer
+          minimum: 0
+    BillingPlan:
+      type: object
+      required:
+      - plan_id
+      - title
+      - period
+      - features
+      - price_amount
+      - currency
+      properties:
+        plan_id:
+          type: string
+        title:
+          type: string
+        period:
+          type: string
+          enum:
+          - month
+          - year
+        features:
+          type: array
+          items:
+            type: string
+        price_amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+    BillingPlans:
+      type: object
+      required:
+      - plans
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingPlan'
+    MyEntitlement:
+      type: object
+      required:
+      - plan
+      - unlimited_search
+      - daily_limit
+      - remaining_today
+      - resets_at
+      - expires_at
+      properties:
+        plan:
+          type: string
+          enum:
+          - free
+          - plus
+        unlimited_search:
+          type: boolean
+        daily_limit:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: 3 для бесплатного тарифа, null для безлимитного.
+        remaining_today:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: null — безлимитный тариф.
+        resets_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        subscription_status:
+          type: string
+          nullable: true
+          enum:
+          - active
+          - past_due
+          - canceled
+          - expired
+          description: null — бесплатный тариф.
+        next_billing_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancel_at_period_end:
+          type: boolean
+          description: Продление отключено, доступ действует до конца оплаченного периода.
+    BillingCheckoutRequest:
+      type: object
+      required:
+      - plan_id
+      properties:
+        plan_id:
+          type: string
+          minLength: 1
+    BillingCheckoutResponse:
+      type: object
+      required:
+      - payment_id
+      - checkout_url
+      - status
+      properties:
+        payment_id:
+          type: string
+        checkout_url:
+          type: string
+          format: uri
+          description: Ссылка для открытия оплаты в браузере.
+        status:
+          type: string
+          enum:
+          - pending
+    MyAction:
+      type: object
+      required:
+      - action_id
+      - action
+      - movie_id
+      - occurred_at
+      properties:
+        action_id:
+          type: integer
+          format: int64
+        action:
+          type: string
+          enum:
+          - watchlist_add
+          - watched_add
+          - rating_set
+          - review_create
+          - review_update
+          - reaction_set
+          description: watchlist_add — добавлен в «Хочу посмотреть», watched_add — в «Просмотрено», rating_set
+            — оценка, review_create и review_update — отзыв, reaction_set — реакция на чужой отзыв.
+        movie_id:
+          type: integer
+          format: int64
+          nullable: true
+        movie_title:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+        rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Оценка для rating_set, для остальных действий null.
+    MyActionsPage:
+      type: object
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyAction'
+        next_cursor:
+          type: string
+          nullable: true
+          description: Курсор следующей страницы.
+    AuthOidcExchangeRequest:
+      type: object
+      required:
+      - code
+      - code_verifier
+      - state
+      properties:
+        code:
+          type: string
+          minLength: 16
+          description: Одноразовый код из ссылки приложения. Действует 5 минут.
+        code_verifier:
+          type: string
+          minLength: 43
+          maxLength: 128
+          description: Секрет PKCE, созданный приложением перед началом входа.
+        state:
+          type: string
+          minLength: 16
+          description: Значение state, переданное при начале входа.
+    BillingWebhookEvent:
+      type: object
+      required:
+      - event
+      - payment_id
+      properties:
+        event:
+          type: string
+          enum:
+          - payment.succeeded
+          - payment.canceled
+          - refund.succeeded
+        payment_id:
+          type: string
+          description: Идентификатор платежа у провайдера.
+  responses:
+    Unauthorized:
+      description: 'Сессия отсутствует или истекла. Коды: SESSION_REQUIRED, SESSION_EXPIRED.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Превышен лимит запросов.
+    InternalError:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Внутренняя ошибка.
+    SearchUnavailable:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SearchError'
+      description: Поиск временно недоступен.
+    SessionCreated:
+      headers:
+        Set-Cookie:
+          $ref: '#/components/headers/SessionSetCookie'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SessionInfo'
+      description: Сессия создана, установлена cookie dv_session.
+    AuthOidcExpired:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Срок входа через провайдера истек.
+    AuthResetLinkExpired:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Ссылка восстановления истекла.
+    MobileOidcInvalid:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Код неверный, уже использован или истек, либо не совпадают state или code_verifier.
+  parameters:
+    AuthOidcProviderPath:
+      name: provider
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/AuthOidcProvider'
+    AuthOidcCookie:
+      name: dv_oidc
+      in: cookie
+      required: true
+      schema:
+        type: string
+  headers:
+    SessionSetCookie:
+      schema:
+        type: string
+    SessionClearCookie:
+      schema:
+        type: string
+paths:
+  /search/image:
+    post:
+      operationId: searchByImage
+      tags:
+      - search
+      summary: Поиск фильма по изображению
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchImageRequest'
+            encoding:
+              file:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Некорректный запрос. Код: FILE_REQUIRED, TOO_MANY_FILES.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: '(вне MVP) Дневной лимит поиска исчерпан. Код: MULTIMODAL_LIMIT_REACHED.'
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Файл слишком большой. Код: FILE_TOO_LARGE.'
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Неподдерживаемый формат. Код: UNSUPPORTED_FORMAT.'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Ошибка обработки. Код: FILE_CORRUPTED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+      description: Один результат. JPG, PNG или WEBP, до 10 МБ.
+  /search/video:
+    post:
+      operationId: searchByVideo
+      tags:
+      - search
+      summary: Поиск фильма по видеофрагменту
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchVideoRequest'
+            encoding:
+              file:
+                contentType: video/mp4, video/quicktime, video/webm
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Некорректный запрос. Код: FILE_REQUIRED, TOO_MANY_FILES.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: '(вне MVP) Дневной лимит поиска исчерпан. Код: MULTIMODAL_LIMIT_REACHED.'
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Файл слишком большой. Код: FILE_TOO_LARGE.'
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Неподдерживаемый формат. Код: UNSUPPORTED_FORMAT.'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Ошибка обработки. Код: VIDEO_TOO_LONG, FILE_CORRUPTED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+      description: Один результат. MP4, MOV или WEBM, до 50 МБ и 30 с. Более длинный ролик обрезается
+        в приложении.
+  /search/audio:
+    post:
+      operationId: searchByAudio
+      tags:
+      - search
+      summary: Поиск фильма по аудиофрагменту
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchAudioRequest'
+            encoding:
+              file:
+                contentType: audio/mpeg, audio/wav, audio/ogg, audio/mp4
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Некорректный запрос. Код: FILE_REQUIRED, TOO_MANY_FILES.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: '(вне MVP) Дневной лимит поиска исчерпан. Код: MULTIMODAL_LIMIT_REACHED.'
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Файл слишком большой. Код: FILE_TOO_LARGE.'
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Неподдерживаемый формат. Код: UNSUPPORTED_FORMAT.'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Ошибка обработки. Код: AUDIO_TOO_LONG, FILE_CORRUPTED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+      description: Один результат. MP3, WAV, OGG или M4A, до 20 МБ и 10 с. Запись с микрофона и звук из
+        ролика передаются в M4A/AAC.
+  /search/text:
+    post:
+      operationId: searchByText
+      tags:
+      - search
+      summary: Поиск фильма по текстовому описанию
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTextRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Некорректный запрос. Код: QUERY_EMPTY.'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: 'Ошибка обработки. Код: QUERY_TOO_SHORT, QUERY_TOO_LONG, QUERY_NOT_ALLOWED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/SearchUnavailable'
+      description: Доступен без входа. До 10 результатов.
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      operationId: registerUser
+      summary: Регистрация по имени пользователя, email и паролю
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthConfirmationSent'
+          description: Создано.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR, AUTH_BIRTH_YEAR_INVALID.'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Конфликт данных. Код: AUTH_EMAIL_TAKEN, AUTH_USERNAME_TAKEN.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Создает учетную запись и отправляет письмо подтверждения.
+  /auth/confirm-email:
+    post:
+      tags:
+      - Auth
+      operationId: confirmEmail
+      summary: Подтверждение email по ссылке из письма
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Срок действия истек. Код: AUTH_CONFIRMATION_LINK_EXPIRED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Подтверждает email по ссылке из письма (действует 24 часа) и создает сессию.
+  /auth/resend-confirmation:
+    post:
+      tags:
+      - Auth
+      operationId: resendEmailConfirmation
+      summary: Повторная отправка письма подтверждения
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthResendConfirmationRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthConfirmationSent'
+          description: Запрос принят.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      operationId: login
+      summary: Вход по имени пользователя или email и паролю
+      security: []
+      parameters:
+      - name: dv_oidc
+        in: cookie
+        required: false
+        schema:
+          type: string
+        description: При привязке аккаунта через OIDC.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginError'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR, AUTH_INVALID_CREDENTIALS.'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginError'
+          description: 'Доступ запрещен. Код: AUTH_CAPTCHA_REQUIRED, AUTH_CAPTCHA_INVALID, AUTH_EMAIL_NOT_CONFIRMED,
+            AUTH_ACCOUNT_BLOCKED.'
+        '429':
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Слишком много запросов. Код: AUTH_LOGIN_LOCKED.'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Создает серверную сессию. После 3 неудачных попыток требуется CAPTCHA, после 5 — блокировка
+        на 15 минут. Если передана cookie dv_oidc с привязкой, после проверки пароля провайдер привязывается
+        к учетной записи.
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      operationId: logout
+      summary: Выход
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionClearCookie'
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/session:
+    get:
+      tags:
+      - Auth
+      operationId: getSession
+      summary: Текущая сессия и пользователь
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+          description: Успешный ответ.
+        '401':
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionClearCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Необходима авторизация. Код: SESSION_REQUIRED, SESSION_EXPIRED.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Проверяет действующую сессию.
+  /auth/oidc/{provider}/start:
+    get:
+      tags:
+      - OIDC
+      operationId: startOidcLogin
+      summary: Начало входа через OIDC-провайдера
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcProviderPath'
+      - name: client
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - web
+          - android
+          default: web
+        description: 'android: вход из мобильного приложения, результат возвращается через ссылку приложения.'
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+          minLength: 16
+        description: Обязателен для client=android.
+      - name: code_challenge
+        in: query
+        required: false
+        schema:
+          type: string
+          minLength: 43
+          maxLength: 128
+        description: Обязателен для client=android. SHA-256 от code_verifier в Base64URL.
+      - name: code_challenge_method
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - S256
+        description: Обязателен для client=android.
+      responses:
+        '302':
+          headers:
+            Location:
+              schema:
+                type: string
+            Set-Cookie:
+              schema:
+                type: string
+          description: Перенаправление.
+        '400':
+          description: Для client=android не переданы обязательные параметры.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      description: Перенаправляет к провайдеру. Для client=android сохраняет state и code_challenge приложения.
+  /auth/oidc/{provider}/callback:
+    get:
+      tags:
+      - OIDC
+      operationId: handleOidcCallback
+      summary: Возврат от OIDC-провайдера
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcProviderPath'
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: error
+        in: query
+        required: false
+        schema:
+          type: string
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      responses:
+        '302':
+          headers:
+            Location:
+              schema:
+                type: string
+            Set-Cookie:
+              schema:
+                type: string
+          description: Перенаправление.
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      description: Обрабатывает ответ провайдера. Для веб-клиента возвращает пользователя в веб-приложение,
+        для client=android перенаправляет на ссылку приложения с одноразовым кодом.
+  /auth/oidc/pending:
+    get:
+      tags:
+      - OIDC
+      operationId: getOidcPending
+      summary: Данные незавершенного входа через OIDC
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthOidcPending'
+          description: Успешный ответ.
+        '410':
+          $ref: '#/components/responses/AuthOidcExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Возвращает данные для завершения регистрации или привязки аккаунта. В приложении cookie
+        dv_oidc выдает POST /auth/oidc/exchange.
+  /auth/oidc/complete:
+    post:
+      tags:
+      - OIDC
+      operationId: completeOidcRegistration
+      summary: Завершение регистрации через OIDC
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/AuthOidcCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthOidcCompleteRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR, AUTH_BIRTH_YEAR_INVALID.'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Конфликт данных. Код: AUTH_USERNAME_TAKEN, AUTH_EMAIL_TAKEN.'
+        '410':
+          $ref: '#/components/responses/AuthOidcExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Завершает регистрацию после входа через провайдера. В приложении вызывается после ответа
+        202 от POST /auth/oidc/exchange.
+  /auth/oidc/exchange:
+    post:
+      tags:
+      - OIDC
+      operationId: exchangeOidcCode
+      summary: Завершение входа через провайдера в приложении
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthOidcExchangeRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '202':
+          description: Нужна регистрация или привязка. Установлена cookie dv_oidc на 30 минут.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthOidcPending'
+        '400':
+          $ref: '#/components/responses/MobileOidcInvalid'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: 'Обменивает одноразовый код на сессию. Если учетная запись с этим провайдером уже есть,
+        возвращает сессию. Если нужна регистрация или привязка к существующей учетной записи, возвращает
+        202 и cookie dv_oidc; дальше вызываются GET /auth/oidc/pending, POST /auth/oidc/complete или POST
+        /auth/login. Код одноразовый: после первой попытки он удаляется, поэтому на повторный, неверный
+        или истекший код, а также на несовпадение state или code_verifier возвращается 400 AUTH_MOBILE_CODE_INVALID.'
+  /auth/password-reset/request:
+    post:
+      tags:
+      - Password
+      operationId: requestPasswordReset
+      summary: Запрос ссылки для сброса пароля
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthPasswordResetRequest'
+      responses:
+        '202':
+          description: Запрос принят.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Отправляет письмо со ссылкой восстановления. Ответ одинаковый, есть учетная запись
+        или нет.
+  /auth/password-reset/check:
+    post:
+      tags:
+      - Password
+      operationId: checkPasswordResetToken
+      summary: Проверка ссылки сброса пароля
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '410':
+          $ref: '#/components/responses/AuthResetLinkExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Проверяет ссылку восстановления (действует 1 час, однократно).
+  /auth/password-reset/complete:
+    post:
+      tags:
+      - Password
+      operationId: completePasswordReset
+      summary: Установка нового пароля по ссылке
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthPasswordResetCompleteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR, AUTH_PASSWORD_SAME_AS_CURRENT.'
+        '410':
+          $ref: '#/components/responses/AuthResetLinkExpired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Устанавливает новый пароль, завершает прежние сессии и создает новую.
+  /users/me/password:
+    put:
+      tags:
+      - Password
+      operationId: changePassword
+      summary: Смена пароля из профиля
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPasswordChangeRequest'
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: AUTH_VALIDATION_ERROR, AUTH_CURRENT_PASSWORD_INVALID,
+            AUTH_PASSWORD_SAME_AS_CURRENT.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Текущий пароль обязателен, если он задан. Остальные сессии завершаются.
+  /movies/{movie_id}:
+    get:
+      operationId: getMovie
+      tags:
+      - Movies
+      summary: Карточка фильма
+      security: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieCard'
+          description: Успешный ответ.
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Сервис недоступен. Код: MOVIE_UNAVAILABLE.'
+      description: Возвращает карточку фильма из каталога.
+  /movies/{movie_id}/reviews:
+    get:
+      operationId: listMovieReviews
+      tags:
+      - Reviews
+      summary: Отзывы о фильме
+      security: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - best
+          - worst
+          - newest
+          - oldest
+          default: best
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieReviewsPage'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: INVALID_PARAMETER.'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Не найдено. Код: MOVIE_NOT_FOUND.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Отзывы по 10 на страницу. Сортировка по реакциям (best, worst) или по дате (newest,
+        oldest). Если пользователь вошел и оставил отзыв на этот фильм, на первой странице его отзыв идет
+        первым при любой сортировке и не повторяется на следующих страницах.
+    post:
+      operationId: createMovieReview
+      tags:
+      - Reviews
+      summary: Опубликовать отзыв о фильме
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieReview'
+          description: Создано.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Отзыв на этот фильм уже есть. Код: REVIEW_ALREADY_EXISTS.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Один отзыв на фильм. Текст от 300 до 10 000 символов, заголовок до 150.
+  /reviews/{review_id}:
+    get:
+      operationId: getReview
+      tags:
+      - Reviews
+      summary: Получить отзыв
+      description: Возвращает отзыв по идентификатору, например свой отзыв для редактирования (my_review_id
+        из /my-state). Доступен без входа.
+      security: []
+      responses:
+        '200':
+          description: Успешный ответ.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieReview'
+        '404':
+          description: 'Отзыв не найден. Код: REVIEW_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+    patch:
+      operationId: updateMyReview
+      tags:
+      - Reviews
+      summary: Редактировать свой отзыв
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieReview'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 'Отзыв принадлежит другому пользователю. Код: REVIEW_NOT_OWNER.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Отзыв не найден. Код: REVIEW_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Только автор отзыва.
+    delete:
+      operationId: deleteMyReview
+      tags:
+      - Reviews
+      summary: Удалить собственный отзыв
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 'Отзыв принадлежит другому пользователю. Код: REVIEW_NOT_OWNER.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Отзыв не найден. Код: REVIEW_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Только автор отзыва. Реакции удаляются вместе с отзывом.
+  /reviews/{review_id}/reaction:
+    put:
+      operationId: setReviewReaction
+      tags:
+      - Reviews
+      summary: Поставить или изменить реакцию на отзыв
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewReactionRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewReactionState'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 'Реакция на свой отзыв. Код: REACTION_OWN_REVIEW.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Отзыв не найден. Код: REVIEW_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: На свой отзыв реакцию поставить нельзя. Повторный вызов с другим типом меняет реакцию.
+    delete:
+      operationId: deleteReviewReaction
+      tags:
+      - Reviews
+      summary: Убрать свою реакцию на отзыв
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Отзыв или реакция не найдены. Коды: REVIEW_NOT_FOUND, REACTION_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /movies/{movie_id}/rating-summary:
+    get:
+      operationId: getMovieRatingSummary
+      tags:
+      - Ratings
+      summary: Общая оценка фильма и количество оценок
+      security: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieRatingSummary'
+          description: Успешный ответ.
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /movies/{movie_id}/my-state:
+    get:
+      operationId: getMyMovieState
+      tags:
+      - Ratings
+      summary: Мои отметки и оценка фильма
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieMyState'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /movies/{movie_id}/my-rating:
+    put:
+      operationId: setMyMovieRating
+      tags:
+      - Ratings
+      summary: Выставить или изменить оценку фильму
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieRatingSummary'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Одна оценка на фильм, повторный вызов заменяет ее. Списки не меняются.
+    delete:
+      operationId: deleteMyMovieRating
+      tags:
+      - Ratings
+      summary: Удалить свою оценку фильма
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден или оценки нет. Коды: MOVIE_NOT_FOUND, RATING_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/watchlist:
+    get:
+      operationId: listMyWatchlist
+      tags:
+      - Personal lists
+      summary: Список «Хочу посмотреть»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - date_desc
+          - date_asc
+          - title_asc
+          - title_desc
+          - rating_desc
+          - rating_asc
+          default: date_desc
+        description: date — по дате добавления, title — по названию, rating — по средней оценке пользователей
+          DejaView.
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 250
+        description: Поиск по названию внутри списка. В мобильном приложении не используется.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedMovies'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: По 24 фильма на страницу.
+  /users/me/watchlist/{movie_id}:
+    put:
+      operationId: addToWatchlist
+      tags:
+      - Personal lists
+      summary: Добавить фильм в «Хочу посмотреть»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Повторное добавление не создает дубликат.
+    delete:
+      operationId: removeFromWatchlist
+      tags:
+      - Personal lists
+      summary: Удалить фильм из «Хочу посмотреть»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/watched:
+    get:
+      operationId: listMyWatched
+      tags:
+      - Personal lists
+      summary: Список «Просмотрено»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - date_desc
+          - date_asc
+          - title_asc
+          - title_desc
+          - rating_desc
+          - rating_asc
+          default: date_desc
+        description: date — по дате добавления, title — по названию, rating — по средней оценке пользователей
+          DejaView.
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 250
+        description: Поиск по названию внутри списка. В мобильном приложении не используется.
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedMovies'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: По 24 фильма на страницу.
+  /users/me/watched/{movie_id}:
+    put:
+      operationId: addToWatched
+      tags:
+      - Personal lists
+      summary: Добавить фильм в «Просмотрено»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 'Фильм не найден. Код: MOVIE_NOT_FOUND.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Повторное добавление не создает дубликат. Оценку фильма не меняет.
+    delete:
+      operationId: removeFromWatched
+      tags:
+      - Personal lists
+      summary: Удалить фильм из «Просмотрено»
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: movie_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me:
+    get:
+      operationId: getMyProfile
+      tags:
+      - Profile
+      summary: Получить свой профиль
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyProfile'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateMyProfile
+      tags:
+      - Profile
+      summary: Изменить имя пользователя
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMyProfileRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyProfile'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Конфликт данных. Код: AUTH_USERNAME_TAKEN.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Год рождения и email не меняются.
+    delete:
+      operationId: deleteMyAccount
+      tags:
+      - Profile
+      summary: Удалить свою учетную запись
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Удаляет учетную запись и завершает все сессии. Оценки и отзывы остаются без автора.
+  /users/me/avatar:
+    put:
+      operationId: uploadMyAvatar
+      tags:
+      - Profile
+      summary: Загрузить аватар профиля
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUploadRequest'
+            encoding:
+              file:
+                contentType: image/jpeg, image/png
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarResponse'
+          description: Успешный ответ.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 'Файл слишком большой. Код: FILE_TOO_LARGE.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Неподдерживаемый формат. Код: UNSUPPORTED_FORMAT.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 'Неверный размер изображения. Код: IMAGE_DIMENSIONS_INVALID.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: JPG или PNG, до 5 МБ, квадрат от 200×200 до 1024×1024 px.
+    delete:
+      operationId: deleteMyAvatar
+      tags:
+      - Profile
+      summary: Удалить аватар профиля
+      security:
+      - sessionCookie: []
+      responses:
+        '204':
+          description: Успешно, без тела ответа.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/statistics:
+    get:
+      operationId: getMyStatistics
+      tags:
+      - Profile
+      summary: Статистика профиля
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyStatistics'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/ratings:
+    get:
+      operationId: listMyRatings
+      tags:
+      - Profile
+      summary: История моих оценок
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - newest
+          - oldest
+          default: newest
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyRatingsPage'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/reviews:
+    get:
+      operationId: listMyReviews
+      tags:
+      - Profile
+      summary: Мои отзывы
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - newest
+          - oldest
+          default: newest
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyReviewsPage'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/me/actions:
+    get:
+      operationId: listMyActions
+      tags:
+      - Profile
+      summary: Последние действия пользователя
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Список действий.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyActionsPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /billing/plans:
+    get:
+      operationId: getBillingPlans
+      tags:
+      - Billing (вне MVP)
+      summary: (вне MVP) Доступные тарифы подписки
+      security: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPlans'
+          description: Успешный ответ.
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: 'Тарифы DejaView+: на месяц — 149 ₽, на год — 1 490 ₽.'
+  /users/me/entitlement:
+    get:
+      operationId: getMyEntitlement
+      tags:
+      - Billing (вне MVP)
+      summary: (вне MVP) Мой тариф и остаток бесплатного лимита
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyEntitlement'
+          description: Успешный ответ.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /billing/checkout:
+    post:
+      operationId: createBillingCheckout
+      tags:
+      - Billing (вне MVP)
+      summary: (вне MVP) Создать платежную сессию
+      security:
+      - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingCheckoutRequest'
+      responses:
+        '201':
+          description: Платежная сессия создана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingCheckoutResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Некорректный запрос. Код: VALIDATION_ERROR.'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: 'Конфликт данных. Код: CONFLICT.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      description: Возвращает ссылку на страницу оплаты. Тариф меняется после подтверждения оплаты платежным
+        провайдером.
+  /billing/subscription/cancel:
+    post:
+      operationId: cancelMySubscription
+      tags:
+      - Billing (вне MVP)
+      summary: (вне MVP) Отключить автопродление подписки
+      description: Сохраняет доступ до конца оплаченного периода.
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Автопродление отключено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyEntitlement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Нет активной подписки.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /billing/webhook:
+    post:
+      operationId: billingWebhook
+      tags:
+      - Billing (вне MVP)
+      summary: (вне MVP) Уведомление платежного провайдера
+      description: Вызывается платежным провайдером, а не приложением. Сервер проверяет подпись уведомления,
+        по payment_id находит платеж и меняет статус подписки. Повторное уведомление о том же платеже
+        ничего не меняет.
+      security: []
+      parameters:
+      - name: X-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Подпись тела запроса ключом магазина.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingWebhookEvent'
+      responses:
+        '200':
+          description: Уведомление принято.
+        '400':
+          description: 'Подпись неверна или тело не распознано. Код: WEBHOOK_INVALID.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+tags:
+- name: search
+- name: Auth
+- name: OIDC
+- name: Password
+- name: Movies
+- name: Reviews
+- name: Ratings
+- name: Personal lists
+- name: Profile
+- name: Billing (вне MVP)
+  description: Подписка и дневной лимит. Не входит в MVP.

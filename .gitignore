@@ -1,0 +1,15 @@
+# Private inputs, temporary checkouts and unsanitized design data
+.local/
+tmp/
+.env
+.env.*
+!.env.example
+local.properties
+*.jks
+*.keystore
+*.fig
+# Generated agent integration; canonical skills live in .agents/skills
+.claude/skills/
+__pycache__/
+*.pyc
+node_modules/

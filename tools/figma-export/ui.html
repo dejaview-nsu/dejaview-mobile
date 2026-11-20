@@ -1,0 +1,39 @@
+<!doctype html><html lang="ru"><meta charset="utf-8">
+<style>body{font:14px system-ui;margin:20px;color:#222}button{padding:9px 14px;margin:12px 6px 12px 0}p{line-height:1.45}#status{white-space:pre-wrap}</style>
+<h2>Приватный экспорт экранов</h2>
+<p>PNG, SVG, дерево слоёв и токены. Плагин читает файл и не отправляет данные в сеть. Архив может содержать личные данные внутри макетов.</p>
+<label><input id="page" type="checkbox"> Только текущая страница</label><br>
+<button id="start">Выгрузить</button><button id="save" disabled>Сохранить ZIP</button>
+<div id="status" role="status">Сохраните результат в приватный каталог проекта.</div>
+<script>
+/* ZIP_IMPLEMENTATION */
+let entries=[], blob=null, total=0, failed=false;
+const start=document.getElementById('start'), save=document.getElementById('save'), status=document.getElementById('status');
+start.onclick=()=>{
+  entries=[]; blob=null; total=0; failed=false; save.disabled=true; start.disabled=true;
+  status.textContent='Читаются страницы и слои…';
+  parent.postMessage({pluginMessage:{type:'export',currentPage:document.getElementById('page').checked}}, '*');
+};
+onmessage=event=>{
+  if(event.source!==parent) return;
+  const m=event.data.pluginMessage; if(!m || failed) return;
+  try{
+    if(m.type==='json'||m.type==='bytes'){
+      const bytes=m.type==='json'?new TextEncoder().encode(m.text):new Uint8Array(m.bytes);
+      total+=bytes.length;
+      if(total>256*1024*1024) throw Error('Архив больше 256 МиБ. Перезапустите плагин и выберите одну страницу.');
+      entries.push({name:m.name,bytes});
+    }else if(m.type==='progress') status.textContent=`Фреймы: ${m.done}/${m.total}`;
+    else if(m.type==='done'){
+      blob=privateZip(entries); entries=[]; start.disabled=false; save.disabled=false;
+      status.textContent=`Фреймов: ${m.frames}. Ошибок: ${m.errors}. Проверьте manifest.json; ошибки означают неполную выгрузку.`;
+    }else if(m.type==='failed') throw Error('Выгрузка прервана. Перезапустите плагин; полный архив не создан.');
+  }catch(error){failed=true;entries=[];blob=null;save.disabled=true;status.textContent=error.message;}
+};
+save.onclick=()=>{
+  if(!blob)return;
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url;a.download='dejaview-private-design.zip';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+};
+</script></html>
