@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check publishable files without echoing matched private values. Stdlib only."""
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -14,6 +15,9 @@ PATTERNS = {
     'personal-phone': re.compile(r'(?<!\w)\+\d[\d ()-]{8,}\d'),
 }
 EMAIL = re.compile(r'[A-Za-z0-9_.+%-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})')
+GRADLE_WRAPPER_PATH = 'android/gradle/wrapper/gradle-wrapper.jar'
+# Gradle 8.12.1: https://gradle.org/release-checksums/
+GRADLE_WRAPPER_SHA256 = '2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046'
 PRIVATE_EXTENSIONS = {'.fig', '.pdf', '.docx', '.xlsx', '.zip', '.jks', '.keystore', '.p12', '.pem'}
 MEDIA_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.mp3', '.wav'}
 
@@ -62,6 +66,10 @@ def scan(root, staged=False, deny_terms=()):
             raw = result.stdout
         else:
             raw = path.read_bytes()
+        if rel == GRADLE_WRAPPER_PATH:
+            if hashlib.sha256(raw).hexdigest() != GRADLE_WRAPPER_SHA256:
+                findings.append((rel, 0, 'unverified-gradle-wrapper'))
+            continue
         if path.suffix.lower() in PRIVATE_EXTENSIONS:
             findings.append((rel, 0, 'private-artifact-in-public-tree'))
             continue
