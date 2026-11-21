@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name" translatable="false">DejaView</string>
+    <string name="search_placeholder">Поиск фильмов</string>
+    <string name="results_placeholder">Результаты поиска</string>
+    <string name="movie_placeholder">Карточка фильма</string>
+    <string name="login_placeholder">Вход</string>
+    <string name="library_placeholder">Библиотека</string>
+    <string name="profile_placeholder">Профиль</string>
+    <string name="history_placeholder">История</string>
+</resources>
