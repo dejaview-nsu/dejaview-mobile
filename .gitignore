@@ -13,3 +13,7 @@ local.properties
 __pycache__/
 *.pyc
 node_modules/
+.gradle/
+.kotlin/
+build/
+.idea/
