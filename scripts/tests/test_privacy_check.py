@@ -1,8 +1,10 @@
+import hashlib
 import importlib.util
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('privacy_check', Path(__file__).parents[1] / 'privacy_check.py')
 privacy = importlib.util.module_from_spec(spec)
@@ -10,6 +12,28 @@ spec.loader.exec_module(privacy)
 
 
 class PrivacyChecks(unittest.TestCase):
+    def test_wrapper_exception_requires_both_exact_path_and_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            wrapper = root / 'android/gradle/wrapper/gradle-wrapper.jar'
+            legacy = root / 'gradle/wrapper/gradle-wrapper.jar'
+            expected = b'\xffsynthetic wrapper'
+            for artifact in (wrapper, legacy):
+                artifact.parent.mkdir(parents=True)
+                artifact.write_bytes(expected)
+            with patch.object(privacy, 'GRADLE_WRAPPER_SHA256', hashlib.sha256(expected).hexdigest()):
+                self.assertEqual([('gradle/wrapper/gradle-wrapper.jar', 0, 'uninspected-binary')], privacy.scan(root))
+                subprocess.run(['git', '-C', str(root), 'add', str(wrapper)], check=True)
+                self.assertEqual([], privacy.scan(root, staged=True))
+                wrapper.write_bytes(b'modified')
+                subprocess.run(['git', '-C', str(root), 'add', str(wrapper)], check=True)
+                wrapper.write_bytes(expected)
+                self.assertEqual(
+                    [('android/gradle/wrapper/gradle-wrapper.jar', 0, 'unverified-gradle-wrapper')],
+                    privacy.scan(root, staged=True),
+                )
+
     def test_detects_private_paths_without_flagging_api_or_url(self):
         drive = 'Z' + ':/' + 'Users/example/private'
         self.assertIn((1, 'absolute-local-path'), privacy.inspect_text(drive))
