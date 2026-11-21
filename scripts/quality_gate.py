@@ -12,15 +12,22 @@ import xml.etree.ElementTree as ET
 from privacy_check import candidates
 
 REQUIRED = {'format', 'static', 'architecture', 'unit', 'coverage', 'build-demo', 'build-prod'}
+WRAPPER_SCRIPTS = ('gradlew', 'gradlew.bat')
+
+
+def android_project_dir(root):
+    nested = root / 'android'
+    return nested if any((nested / name).is_file() for name in WRAPPER_SCRIPTS) else root
 
 
 def android_present(root):
-    return (root / 'gradlew').exists() or (root / 'gradlew.bat').exists() or any(
+    project = android_project_dir(root)
+    return any((project / name).is_file() for name in WRAPPER_SCRIPTS) or any(
         Path(p).suffix in {'.kt', '.java'} for p in candidates(root))
 
 
-def android_commands(root, config, ui=False):
-    if not (root / 'gradlew').exists() or not (root / 'gradlew.bat').exists():
+def android_commands(project, config, ui=False):
+    if not all((project / name).is_file() for name in WRAPPER_SCRIPTS):
         raise ValueError('Android wrapper is missing; Android checks NOT RUN')
     commands = config.get('commands', [])
     needed = REQUIRED | ({'ui'} if ui else set())
@@ -37,7 +44,7 @@ def android_commands(root, config, ui=False):
             raise ValueError('Each command requires a nonempty argv string list')
         argv = argv.copy()
         if argv[0] == 'gradlew':
-            argv[0] = str(root / ('gradlew.bat' if os.name == 'nt' else 'gradlew'))
+            argv[0] = str(project / ('gradlew.bat' if os.name == 'nt' else 'gradlew'))
         result.append((command['group'], argv))
     return result
 
@@ -72,27 +79,28 @@ def run(root, scope='auto', ui=False):
     report = {'scope': scope, 'status': 'FAILED', 'checks': []}
     started = time.time()
     commands = [
-        ('documents', [sys.executable, 'scripts/validate_repo.py']),
-        ('privacy', [sys.executable, 'scripts/privacy_check.py']),
-        ('tools-python', [sys.executable, '-m', 'unittest', 'discover', '-s', 'scripts/tests']),
-        ('tools-node', ['node', '--test', 'tools/design/extract-fig.test.mjs', 'tools/figma-export/export.test.mjs']),
+        ('documents', [sys.executable, 'scripts/validate_repo.py'], root),
+        ('privacy', [sys.executable, 'scripts/privacy_check.py'], root),
+        ('tools-python', [sys.executable, '-m', 'unittest', 'discover', '-s', 'scripts/tests'], root),
+        ('tools-node', ['node', '--test', 'tools/design/extract-fig.test.mjs', 'tools/figma-export/export.test.mjs'], root),
     ]
     try:
         if ui and scope != 'android':
             raise ValueError('--ui requires Android scope')
         if scope == 'android':
+            project = android_project_dir(root)
             config = json.loads((root / 'config/quality-gate.json').read_text(encoding='utf-8'))['android']
-            commands += android_commands(root, config, ui)
-        for group, argv in commands:
+            commands.extend((group, argv, project) for group, argv in android_commands(project, config, ui))
+        for group, argv, cwd in commands:
             print('CHECK:', group, flush=True)
-            result = subprocess.run(argv, cwd=root, check=False)
+            result = subprocess.run(argv, cwd=cwd, check=False)
             report['checks'].append({'group': group, 'exit_code': result.returncode})
             if result.returncode:
                 raise ValueError('Failed check: ' + group)
         if scope == 'android':
-            check_reports(root, config['junit_reports'], started)
+            check_reports(project, config['junit_reports'], started)
             if ui:
-                check_reports(root, config['ui_junit_reports'], started)
+                check_reports(project, config['ui_junit_reports'], started)
         report['status'] = 'PASSED'
     except (ValueError, OSError, KeyError, ET.ParseError) as error:
         report['reason'] = str(error) if isinstance(error, ValueError) else 'Configuration, tool or report could not be read/executed'
