@@ -69,7 +69,12 @@ fun ContentFeedback(
                 border = BorderStroke(1.dp, DejaViewColors.strongBorder),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(painterResource(icon), null, Modifier.size(36.dp), tint = DejaViewColors.accent)
+                    Icon(
+                        painterResource(icon),
+                        null,
+                        Modifier.size(36.dp),
+                        tint = if (kind == FeedbackKind.InvalidFile) DejaViewColors.error else DejaViewColors.accent,
+                    )
                 }
             }
         }

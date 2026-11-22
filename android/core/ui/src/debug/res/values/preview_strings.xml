@@ -1,0 +1,7 @@
+<resources>
+    <string name="dv_preview_submit">Найти фильм</string>
+    <string name="dv_preview_field">Описание фильма</string>
+    <string name="dv_preview_placeholder">Опишите сцену или героя</string>
+    <string name="dv_preview_movie">Путешествие к далёкой звезде и возвращение неизвестного пилота</string>
+    <string name="dv_preview_plot">Команда получает сигнал с оставленной станции.</string>
+</resources>

@@ -30,6 +30,7 @@ import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.MovieSummary
 
+/** [poster] renders the caller?s image inside the poster bounds. The card supplies its accessible label. */
 @Composable
 fun MovieCard(
     movie: MovieSummary,
