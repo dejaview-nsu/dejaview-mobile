@@ -4,13 +4,16 @@
       {"group": "format", "argv": ["gradlew", "spotlessCheck"]},
       {"group": "static", "argv": ["gradlew", ":app:lintDemoDebug", ":app:lintProdDebug"]},
       {"group": "architecture", "argv": ["gradlew", "checkArchitecture"]},
-      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", "--rerun-tasks"]},
-      {"group": "coverage", "argv": ["gradlew", ":core:navigation:jacocoTestCoverageVerification"]},
+      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", ":feature:search-text:testDemoDebugUnitTest", "--rerun-tasks"]},
+      {"group": "coverage", "argv": ["gradlew", ":core:navigation:jacocoTestCoverageVerification", ":feature:search-text:verifyReferenceSearchCoverage"]},
       {"group": "build-demo", "argv": ["gradlew", "assembleDemoDebug", ":core:media:assembleDebug", ":core:network:assembleDebug", ":core:security:assembleDebug", ":core:storage:assembleDebug", ":core:testing:assemble"]},
       {"group": "build-prod", "argv": ["gradlew", "assembleProdDebug"]},
       {"group": "ui", "argv": ["gradlew", ":app:connectedDemoDebugAndroidTest", "--rerun", ":app:connectedProdDebugAndroidTest", "--rerun"]}
     ],
-    "junit_reports": ["core/navigation/build/test-results/test/TEST-*.xml"],
+    "junit_reports": [
+      "core/navigation/build/test-results/test/TEST-*.xml",
+      "feature/search-text/build/test-results/testDemoDebugUnitTest/TEST-*.xml"
+    ],
     "ui_junit_reports": [
       "app/build/outputs/androidTest-results/connected/debug/flavors/demo/TEST-*.xml",
       "app/build/outputs/androidTest-results/connected/debug/flavors/prod/TEST-*.xml"
