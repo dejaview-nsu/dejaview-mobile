@@ -13,7 +13,10 @@ import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.search.text.reference.domain.ReferenceSearch
 
-internal const val QUERY_LIMIT = 250
+internal const val MIN_QUERY_LENGTH = 3
+internal const val MAX_QUERY_LENGTH = 250
+private const val MAX_DRAFT_LENGTH = MAX_QUERY_LENGTH + 1
+private const val DRAFT_KEY = "reference-search-query"
 
 internal data class ReferenceSearchState(
     val query: String = "",
@@ -24,8 +27,8 @@ internal data class ReferenceSearchState(
     val canSubmit: Boolean
         get() {
             val trimmed = query.trim()
-            return trimmed.codePointCount(0, trimmed.length) >= 3 &&
-                characterCount <= QUERY_LIMIT && status != SearchStatus.Loading
+            return trimmed.codePointCount(0, trimmed.length) >= MIN_QUERY_LENGTH &&
+                characterCount <= MAX_QUERY_LENGTH && status != SearchStatus.Loading
         }
 }
 
@@ -59,34 +62,34 @@ internal class ReferenceSearchViewModel(
     private val search: ReferenceSearch,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(ReferenceSearchState(query = savedState.get<String>(QUERY).orEmpty()))
+    private val mutableState = MutableStateFlow(ReferenceSearchState(query = savedState.get<String>(DRAFT_KEY).orEmpty()))
     val state = mutableState.asStateFlow()
     private var request: Job? = null
 
     fun onAction(action: ReferenceSearchAction) {
         when (action) {
-            is ReferenceSearchAction.Edit -> {
-                request?.cancel()
-                val query = boundedDraft(action.query)
-                savedState[QUERY] = query
-                mutableState.value = ReferenceSearchState(query = query)
-            }
+            is ReferenceSearchAction.Edit -> edit(action.query)
             ReferenceSearchAction.Submit -> submit()
-            ReferenceSearchAction.Cancel -> {
-                request?.cancel()
-                mutableState.value = mutableState.value.copy(status = SearchStatus.Editing)
-            }
+            ReferenceSearchAction.Cancel -> cancelSearch()
         }
+    }
+
+    private fun edit(text: String) {
+        request?.cancel()
+        val query = boundedDraft(text)
+        savedState[DRAFT_KEY] = query
+        mutableState.value = ReferenceSearchState(query = query)
+    }
+
+    private fun cancelSearch() {
+        request?.cancel()
+        mutableState.value = mutableState.value.copy(status = SearchStatus.Editing)
     }
 
     private fun boundedDraft(query: String): String {
         // Keep one extra code point so the field can show the limit error without saving a large paste.
-        val maximum = QUERY_LIMIT + 1
-        return if (query.codePointCount(0, query.length) <= maximum) {
-            query
-        } else {
-            query.substring(0, query.offsetByCodePoints(0, maximum))
-        }
+        if (query.codePointCount(0, query.length) <= MAX_DRAFT_LENGTH) return query
+        return query.substring(0, query.offsetByCodePoints(0, MAX_DRAFT_LENGTH))
     }
 
     private fun submit() {
@@ -97,16 +100,13 @@ internal class ReferenceSearchViewModel(
             viewModelScope.launch {
                 val result = search.search(submitted.query.trim())
                 ensureActive()
-                val status =
-                    when (result) {
-                        is AppResult.Success -> if (result.value.isEmpty()) SearchStatus.Empty else SearchStatus.Results(result.value)
-                        is AppResult.Failure -> if (result.error is AppError.Offline) SearchStatus.Offline else SearchStatus.Failed
-                    }
-                mutableState.value = submitted.copy(status = status)
+                mutableState.value = submitted.copy(status = result.toSearchStatus())
             }
     }
 
-    private companion object {
-        const val QUERY = "reference-search-query"
-    }
+    private fun AppResult<List<MovieSummary>>.toSearchStatus(): SearchStatus =
+        when (this) {
+            is AppResult.Success -> if (value.isEmpty()) SearchStatus.Empty else SearchStatus.Results(value)
+            is AppResult.Failure -> if (error is AppError.Offline) SearchStatus.Offline else SearchStatus.Failed
+        }
 }

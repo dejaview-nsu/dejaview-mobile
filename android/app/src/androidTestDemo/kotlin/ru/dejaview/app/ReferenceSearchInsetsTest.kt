@@ -1,5 +1,6 @@
 package ru.dejaview.app
 
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -14,6 +15,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+private const val UI_TIMEOUT_MS = 10_000L
+private const val INSET_ROUNDING_TOLERANCE_PX = 1
+private const val DEMO_MOVIE_TITLE = "Сигнал с далёкой орбиты"
+
 class ReferenceSearchInsetsTest {
     @get:Rule
     val compose = createAndroidComposeRule<MainActivity>()
@@ -22,37 +27,40 @@ class ReferenceSearchInsetsTest {
     fun searchButtonStaysAboveImeAndSubmitsTheDemoResult() {
         val field = compose.onNodeWithContentDescription("Описание фильма")
         val submit = compose.onNodeWithText("Найти фильм")
-        val heading = compose.onNodeWithText("Поиск по описанию")
-        val (safeTop, safeBottom) =
-            compose.runOnUiThread {
-                val bars = insets().getInsets(WindowInsetsCompat.Type.systemBars())
-                bars.top to (compose.activity.window.decorView.height - bars.bottom)
-            }
-        val headingNode = heading.fetchSemanticsNode()
-        assertTrue(headingNode.positionInWindow.y >= safeTop)
-        val initialButton = submit.assertIsDisplayed().fetchSemanticsNode()
-        assertTrue(initialButton.positionInWindow.y + initialButton.size.height <= safeBottom + 1)
+        assertHeadingBelowSystemBars()
+        assertAboveInset(submit, WindowInsetsCompat.Type.systemBars())
 
         field.performClick().performTextInput("космос")
-        compose.waitUntil(timeoutMillis = 10_000) {
+        compose.waitUntil(timeoutMillis = UI_TIMEOUT_MS) {
             compose.runOnUiThread { insets().isVisible(WindowInsetsCompat.Type.ime()) }
         }
-        val keyboardTop =
-            compose.runOnUiThread {
-                compose.activity.window.decorView.height - insets().getInsets(WindowInsetsCompat.Type.ime()).bottom
-            }
-        val buttonNode = submit.assertIsDisplayed().fetchSemanticsNode()
-        assertTrue(buttonNode.positionInWindow.y + buttonNode.size.height <= keyboardTop + 1)
+        assertAboveInset(submit, WindowInsetsCompat.Type.ime())
+
         submit.performClick()
-        compose.waitUntil(timeoutMillis = 10_000) {
-            compose
-                .onAllNodes(
-                    androidx.compose.ui.test
-                        .hasText("Сигнал с далёкой орбиты"),
-                ).fetchSemanticsNodes()
-                .isNotEmpty()
+        compose.waitUntil(timeoutMillis = UI_TIMEOUT_MS) {
+            compose.onAllNodes(hasText(DEMO_MOVIE_TITLE)).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Сигнал с далёкой орбиты").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(DEMO_MOVIE_TITLE).performScrollTo().assertIsDisplayed()
+    }
+
+    private fun assertHeadingBelowSystemBars() {
+        val safeTop =
+            compose.runOnUiThread { insets().getInsets(WindowInsetsCompat.Type.systemBars()).top }
+        val heading = compose.onNodeWithText("Поиск по описанию").fetchSemanticsNode()
+        assertTrue(heading.positionInWindow.y >= safeTop)
+    }
+
+    private fun assertAboveInset(
+        control: SemanticsNodeInteraction,
+        insetTypes: Int,
+    ) {
+        val insetTop =
+            compose.runOnUiThread {
+                compose.activity.window.decorView.height - insets().getInsets(insetTypes).bottom
+            }
+        val node = control.assertIsDisplayed().fetchSemanticsNode()
+        val controlBottom = node.positionInWindow.y + node.size.height
+        assertTrue(controlBottom <= insetTop + INSET_ROUNDING_TOLERANCE_PX)
     }
 
     private fun insets(): WindowInsetsCompat = checkNotNull(ViewCompat.getRootWindowInsets(compose.activity.window.decorView))

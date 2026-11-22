@@ -29,6 +29,8 @@ import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.searchtext.R
 
+private const val DESCRIPTION_LINES = 6
+
 @Composable
 internal fun ReferenceSearchScreen(
     state: ReferenceSearchState,
@@ -47,34 +49,8 @@ internal fun ReferenceSearchScreen(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
             verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
         ) {
-            Text(stringResource(R.string.reference_search_title), style = DejaViewType.title)
-            Text(
-                stringResource(R.string.reference_search_heading),
-                modifier = Modifier.semantics { heading() },
-                style = DejaViewType.heading,
-            )
-            Text(
-                stringResource(R.string.reference_search_explanation),
-                style = DejaViewType.body,
-                color = DejaViewColors.secondaryText,
-            )
-            DejaViewTextField(
-                value = state.query,
-                onValueChange = { onAction(ReferenceSearchAction.Edit(it)) },
-                label = stringResource(R.string.reference_search_description),
-                placeholder = stringResource(R.string.reference_search_example),
-                isError = state.characterCount > QUERY_LIMIT,
-                supportingText = {
-                    Text(
-                        stringResource(R.string.reference_search_count, state.characterCount, QUERY_LIMIT),
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                },
-                enabled = state.status != SearchStatus.Loading,
-                minLines = 6,
-                maxLines = 6,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            )
+            SearchHeading()
+            DescriptionField(state, onValueChange = { onAction(ReferenceSearchAction.Edit(it)) })
             SearchFeedback(state.status, onAction)
         }
         if (state.status == SearchStatus.Editing || state.status is SearchStatus.Results) {
@@ -86,6 +62,50 @@ internal fun ReferenceSearchScreen(
             )
         }
     }
+}
+
+@Composable
+private fun SearchHeading() {
+    Text(stringResource(R.string.reference_search_title), style = DejaViewType.title)
+    Text(
+        text = stringResource(R.string.reference_search_heading),
+        modifier = Modifier.semantics { heading() },
+        style = DejaViewType.heading,
+    )
+    Text(
+        text = stringResource(R.string.reference_search_explanation),
+        style = DejaViewType.body,
+        color = DejaViewColors.secondaryText,
+    )
+}
+
+@Composable
+private fun DescriptionField(
+    state: ReferenceSearchState,
+    onValueChange: (String) -> Unit,
+) {
+    DejaViewTextField(
+        value = state.query,
+        onValueChange = onValueChange,
+        label = stringResource(R.string.reference_search_description),
+        placeholder = stringResource(R.string.reference_search_example),
+        isError = state.characterCount > MAX_QUERY_LENGTH,
+        supportingText = {
+            Text(
+                text =
+                    stringResource(
+                        R.string.reference_search_count,
+                        state.characterCount,
+                        MAX_QUERY_LENGTH,
+                        MIN_QUERY_LENGTH,
+                    ),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        },
+        enabled = state.status != SearchStatus.Loading,
+        minLines = DESCRIPTION_LINES,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+    )
 }
 
 @Composable
