@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ru.dejaview.core.ui.R
 import ru.dejaview.core.ui.theme.DejaViewColors
@@ -30,7 +31,11 @@ import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.MovieSummary
 
-/** [poster] renders the caller?s image inside the poster bounds. The card supplies its accessible label. */
+private val POSTER_WIDTH = 56.dp
+private val HIGHLIGHTED_POSTER_WIDTH = 72.dp
+private const val POSTER_ASPECT_RATIO = 2f / 3f
+
+/** Provides the accessibility label for the image rendered by [poster]. */
 @Composable
 fun MovieCard(
     movie: MovieSummary,
@@ -39,14 +44,6 @@ fun MovieCard(
     onClick: (() -> Unit)? = null,
     poster: (@Composable () -> Unit)? = null,
 ) {
-    val secondaryColor = if (highlighted) DejaViewColors.paperSecondaryText else DejaViewColors.secondaryText
-    val posterDescription =
-        if (poster == null) {
-            stringResource(R.string.dv_movie_missing_poster)
-        } else {
-            stringResource(R.string.dv_movie_poster, movie.title)
-        }
-
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = DejaViewShapes.card,
@@ -59,33 +56,62 @@ fun MovieCard(
             horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
             verticalAlignment = Alignment.Top,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .width(if (highlighted) 72.dp else 56.dp)
-                        .aspectRatio(2f / 3)
-                        .clip(DejaViewShapes.poster)
-                        .background(DejaViewColors.elevated)
-                        .semantics { contentDescription = posterDescription },
-                contentAlignment = Alignment.Center,
-            ) {
-                if (poster == null) {
-                    Icon(painterResource(R.drawable.dv_poster_placeholder), null, tint = DejaViewColors.mutedText)
-                } else {
-                    poster()
-                }
-            }
+            MoviePoster(
+                title = movie.title,
+                width = if (highlighted) HIGHLIGHTED_POSTER_WIDTH else POSTER_WIDTH,
+                poster = poster,
+            )
+            MovieDetails(movie, highlighted, Modifier.weight(1f))
+        }
+    }
+}
 
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.extraSmall)) {
-                if (highlighted) {
-                    Text(stringResource(R.string.dv_movie_best_match), style = DejaViewType.overline, color = secondaryColor)
-                }
-                Text(movie.title, style = if (highlighted) DejaViewType.subheading else DejaViewType.title)
-                movie.year?.let { Text(it.toString(), style = DejaViewType.bodySmall, color = secondaryColor) }
-                movie.overview?.takeIf(String::isNotBlank)?.let {
-                    Text(it, style = DejaViewType.bodySmall, color = secondaryColor)
-                }
-            }
+@Composable
+private fun MoviePoster(
+    title: String,
+    width: Dp,
+    poster: (@Composable () -> Unit)?,
+) {
+    val description =
+        if (poster == null) {
+            stringResource(R.string.dv_movie_missing_poster)
+        } else {
+            stringResource(R.string.dv_movie_poster, title)
+        }
+
+    Box(
+        modifier =
+            Modifier
+                .width(width)
+                .aspectRatio(POSTER_ASPECT_RATIO)
+                .clip(DejaViewShapes.poster)
+                .background(DejaViewColors.elevated)
+                .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (poster == null) {
+            Icon(painterResource(R.drawable.dv_poster_placeholder), null, tint = DejaViewColors.mutedText)
+        } else {
+            poster()
+        }
+    }
+}
+
+@Composable
+private fun MovieDetails(
+    movie: MovieSummary,
+    highlighted: Boolean,
+    modifier: Modifier,
+) {
+    val secondaryColor = if (highlighted) DejaViewColors.paperSecondaryText else DejaViewColors.secondaryText
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.extraSmall)) {
+        if (highlighted) {
+            Text(stringResource(R.string.dv_movie_best_match), style = DejaViewType.overline, color = secondaryColor)
+        }
+        Text(movie.title, style = if (highlighted) DejaViewType.subheading else DejaViewType.title)
+        movie.year?.let { Text(it.toString(), style = DejaViewType.bodySmall, color = secondaryColor) }
+        movie.overview?.takeIf(String::isNotBlank)?.let {
+            Text(it, style = DejaViewType.bodySmall, color = secondaryColor)
         }
     }
 }

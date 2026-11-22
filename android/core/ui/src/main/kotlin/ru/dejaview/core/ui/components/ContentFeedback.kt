@@ -30,6 +30,9 @@ import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 
+private val FEEDBACK_BADGE_SIZE = 80.dp
+private val FEEDBACK_ICON_SIZE = 36.dp
+
 enum class FeedbackKind(
     @get:StringRes internal val title: Int,
     @get:StringRes internal val message: Int,
@@ -58,26 +61,7 @@ fun ContentFeedback(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
     ) {
-        val icon = kind.icon
-        if (icon == null) {
-            CircularProgressIndicator(color = DejaViewColors.accent)
-        } else {
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = DejaViewShapes.pill,
-                color = DejaViewColors.surface,
-                border = BorderStroke(1.dp, DejaViewColors.strongBorder),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painterResource(icon),
-                        null,
-                        Modifier.size(36.dp),
-                        tint = if (kind == FeedbackKind.InvalidFile) DejaViewColors.error else DejaViewColors.accent,
-                    )
-                }
-            }
-        }
+        FeedbackIllustration(kind)
         Text(
             text = title,
             modifier =
@@ -94,13 +78,37 @@ fun ContentFeedback(
             color = DejaViewColors.secondaryText,
             textAlign = TextAlign.Center,
         )
-        if (onAction != null) {
-            if (kind == FeedbackKind.Loading) {
-                TextButton(onClick = onAction) { Text(actionText) }
-            } else {
-                PrimaryButton(actionText, onAction, Modifier.fillMaxWidth())
-            }
+        if (onAction != null && kind == FeedbackKind.Loading) {
+            TextButton(onClick = onAction) { Text(actionText) }
+        } else if (onAction != null) {
+            PrimaryButton(actionText, onAction, Modifier.fillMaxWidth())
         }
         secondaryAction?.invoke()
+    }
+}
+
+@Composable
+private fun FeedbackIllustration(kind: FeedbackKind) {
+    val icon = kind.icon
+    if (icon == null) {
+        CircularProgressIndicator(color = DejaViewColors.accent)
+        return
+    }
+
+    val tint = if (kind == FeedbackKind.InvalidFile) DejaViewColors.error else DejaViewColors.accent
+    Surface(
+        modifier = Modifier.size(FEEDBACK_BADGE_SIZE),
+        shape = DejaViewShapes.pill,
+        color = DejaViewColors.surface,
+        border = BorderStroke(DejaViewShapes.outlineWidth, DejaViewColors.strongBorder),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(FEEDBACK_ICON_SIZE),
+                tint = tint,
+            )
+        }
     }
 }

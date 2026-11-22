@@ -25,6 +25,10 @@ import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.SearchMode
 
+private const val COLUMNS = 2
+private val TILE_MIN_HEIGHT = 132.dp
+private val TILE_ICON_SIZE = 28.dp
+
 @Composable
 fun SearchModeSelector(
     selectedMode: SearchMode,
@@ -34,42 +38,58 @@ fun SearchModeSelector(
     subtitles: Map<SearchMode, String> = emptyMap(),
 ) {
     Column(modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.medium)) {
-        for (row in SearchMode.entries.chunked(2)) {
+        for (row in SearchMode.entries.chunked(COLUMNS)) {
             Row(horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.medium)) {
                 for (mode in row) {
-                    val selected = selectedMode == mode
-                    Surface(
-                        selected = selected,
+                    SearchModeTile(
+                        mode = mode,
+                        selected = selectedMode == mode,
                         onClick = { onModeSelected(mode) },
                         modifier = Modifier.weight(1f),
                         enabled = enabled,
-                        shape = DejaViewShapes.card,
-                        color = if (selected) DejaViewColors.paper else DejaViewColors.surface,
-                        contentColor = if (selected) DejaViewColors.paperText else DejaViewColors.text,
-                        border = BorderStroke(1.dp, if (selected) DejaViewColors.paper else DejaViewColors.border),
-                    ) {
-                        Column(
-                            modifier = Modifier.heightIn(min = 132.dp).padding(DejaViewSpacing.large),
-                            verticalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Icon(
-                                painter = painterResource(mode.icon),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = if (selected) DejaViewColors.paperLink else DejaViewColors.accent,
-                            )
-                            Column(Modifier.padding(top = DejaViewSpacing.small)) {
-                                Text(stringResource(mode.label), style = DejaViewType.subheading)
-                                subtitles[mode]?.let {
-                                    Text(
-                                        text = it,
-                                        style = DejaViewType.caption,
-                                        color = if (selected) DejaViewColors.paperSecondaryText else DejaViewColors.secondaryText,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                        subtitle = subtitles[mode],
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchModeTile(
+    mode: SearchMode,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    subtitle: String?,
+) {
+    val borderColor = if (selected) DejaViewColors.paper else DejaViewColors.border
+    Surface(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shape = DejaViewShapes.card,
+        color = if (selected) DejaViewColors.paper else DejaViewColors.surface,
+        contentColor = if (selected) DejaViewColors.paperText else DejaViewColors.text,
+        border = BorderStroke(DejaViewShapes.outlineWidth, borderColor),
+    ) {
+        Column(
+            modifier = Modifier.heightIn(min = TILE_MIN_HEIGHT).padding(DejaViewSpacing.large),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(
+                painter = painterResource(mode.icon),
+                contentDescription = null,
+                modifier = Modifier.size(TILE_ICON_SIZE),
+                tint = if (selected) DejaViewColors.paperLink else DejaViewColors.accent,
+            )
+            Column(Modifier.padding(top = DejaViewSpacing.small)) {
+                Text(stringResource(mode.label), style = DejaViewType.subheading)
+                if (subtitle != null) {
+                    val color = if (selected) DejaViewColors.paperSecondaryText else DejaViewColors.secondaryText
+                    Text(subtitle, style = DejaViewType.caption, color = color)
                 }
             }
         }

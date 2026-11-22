@@ -1,5 +1,6 @@
 package ru.dejaview.core.ui.theme
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -49,7 +50,8 @@ object DejaViewShapes {
     val field = RoundedCornerShape(14.dp)
     val card = RoundedCornerShape(20.dp)
     val sheet = RoundedCornerShape(28.dp)
-    val pill = RoundedCornerShape(percent = 50)
+    val pill = CircleShape
+    internal val outlineWidth = 1.dp
 }
 
 private val colors =

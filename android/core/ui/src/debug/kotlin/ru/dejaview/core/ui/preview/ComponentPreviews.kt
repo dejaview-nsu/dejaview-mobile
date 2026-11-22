@@ -4,13 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import ru.dejaview.core.ui.R
 import ru.dejaview.core.ui.components.ContentFeedback
 import ru.dejaview.core.ui.components.DejaViewTextField
@@ -23,7 +22,11 @@ import ru.dejaview.core.ui.theme.DejaViewTheme
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchMode
 
-@Preview(name = "Controls · 412 dp", widthDp = 412, heightDp = 700, locale = "ru")
+private const val PHONE_WIDTH_DP = 412
+private const val NARROW_WIDTH_DP = 280
+private const val LARGE_FONT_SCALE = 2f
+
+@Preview(widthDp = PHONE_WIDTH_DP)
 @Composable
 private fun ControlsPreview() =
     PreviewSurface {
@@ -39,8 +42,8 @@ private fun ControlsPreview() =
         SearchModeSelector(selectedMode = SearchMode.TEXT, onModeSelected = {})
     }
 
-@Preview(name = "Movie · 412 dp", widthDp = 412, locale = "ru")
-@Preview(name = "Movie · 280 dp · 200%", widthDp = 280, fontScale = 2f, locale = "ru")
+@Preview(widthDp = PHONE_WIDTH_DP)
+@Preview(name = "Large text", widthDp = NARROW_WIDTH_DP, fontScale = LARGE_FONT_SCALE)
 @Composable
 private fun MoviePreview() =
     PreviewSurface {
@@ -56,21 +59,20 @@ private fun MoviePreview() =
         )
     }
 
-@Preview(name = "Feedback · 412 dp", widthDp = 412, heightDp = 1450, locale = "ru")
+@Preview(widthDp = PHONE_WIDTH_DP)
 @Composable
-private fun FeedbackPreview() =
-    PreviewSurface {
-        for (kind in FeedbackKind.entries) {
-            ContentFeedback(kind, onAction = {})
-        }
-    }
+private fun FeedbackPreview(
+    @PreviewParameter(FeedbackPreviewProvider::class) kind: FeedbackKind,
+) = PreviewSurface {
+    ContentFeedback(kind, onAction = {})
+}
 
 @Composable
 private fun PreviewSurface(content: @Composable () -> Unit) {
     DejaViewTheme {
         Surface(Modifier.fillMaxWidth()) {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(DejaViewSpacing.screen),
+                modifier = Modifier.padding(DejaViewSpacing.screen),
                 verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.extraLarge),
             ) {
                 content()
