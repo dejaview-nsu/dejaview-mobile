@@ -15,15 +15,16 @@ start.onclick=()=>{
   parent.postMessage({pluginMessage:{type:'export',currentPage:document.getElementById('page').checked}}, '*');
 };
 onmessage=event=>{
-  if(event.source!==parent) return;
-  const m=event.data.pluginMessage; if(!m || failed) return;
+  // Figma's desktop sandbox can deliver messages through a separate window.
+  const m=event.data?.pluginMessage; if(!m || failed || !start.disabled) return;
   try{
     if(m.type==='json'||m.type==='bytes'){
       const bytes=m.type==='json'?new TextEncoder().encode(m.text):new Uint8Array(m.bytes);
       total+=bytes.length;
       if(total>256*1024*1024) throw Error('Архив больше 256 МиБ. Перезапустите плагин и выберите одну страницу.');
       entries.push({name:m.name,bytes});
-    }else if(m.type==='progress') status.textContent=`Фреймы: ${m.done}/${m.total}`;
+    }else if(m.type==='loading') status.textContent=m.currentPage?'Читается текущая страница…':'Figma загружает все страницы…';
+    else if(m.type==='progress') status.textContent=`Фреймы: ${m.done}/${m.total}`;
     else if(m.type==='done'){
       blob=privateZip(entries); entries=[]; start.disabled=false; save.disabled=false;
       status.textContent=`Фреймов: ${m.frames}. Ошибок: ${m.errors}. Проверьте manifest.json; ошибки означают неполную выгрузку.`;

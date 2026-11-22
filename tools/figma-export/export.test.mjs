@@ -5,6 +5,27 @@ import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 const source=name=>fs.readFileSync(new URL(name,import.meta.url),'utf8');
 
+test('the UI displays progress from the Figma sandbox bridge during export', () => {
+  const elements = new Map(['start', 'save', 'status', 'page'].map(id => [id, {}]));
+  const context = vm.createContext({
+    document: { getElementById: id => elements.get(id) },
+    parent: { postMessage() {} },
+    onmessage: null,
+  });
+  const script = source('ui.html').split('<script>')[1].split('</script>')[0];
+  vm.runInContext(script, context);
+
+  const data = { pluginMessage: { type: 'progress', done: 1, total: 4 } };
+  const bridge = {};
+  context.onmessage({ source: bridge, data });
+  assert.equal(elements.get('status').textContent, undefined);
+  elements.get('start').onclick();
+  context.onmessage({ source: bridge, data: null });
+  assert.equal(elements.get('status').textContent, 'Читаются страницы и слои…');
+  context.onmessage({ source: bridge, data });
+  assert.equal(elements.get('status').textContent, 'Фреймы: 1/4');
+});
+
 test('ZIP is readable by an independent implementation; rejects traversal and duplicates',async()=>{
   const context=vm.createContext({Blob,TextEncoder,Uint8Array,DataView,Set,Error});
   vm.runInContext(source('zip.js'),context);
@@ -39,5 +60,6 @@ test('exports only outer frames; preserves text, partial failures and variable d
   assert.equal(manifest.errors.length,1);
   assert.equal(json('screens/2-1.json').children[0].characters,'Synthetic text');
   assert.equal(json('variables.json')[0].valuesByMode.m,8);
+  assert.deepEqual(messages.filter(m=>m.type==='progress').map(m=>m.done),[0,1]);
   assert.equal(messages.at(-1).type,'done');
 });
