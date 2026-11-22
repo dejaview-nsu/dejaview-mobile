@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
+    api(project(":core:model"))
     api(platform(libs.compose.bom))
     api(libs.compose.material3)
 }

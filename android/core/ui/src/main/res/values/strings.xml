@@ -1,0 +1,23 @@
+<resources>
+    <string name="dv_mode_text">Описание</string>
+    <string name="dv_mode_image">Кадр</string>
+    <string name="dv_mode_video">Видео</string>
+    <string name="dv_mode_audio">Звук</string>
+    <string name="dv_movie_poster">Постер фильма «%1$s»</string>
+    <string name="dv_movie_missing_poster">Постер недоступен</string>
+    <string name="dv_movie_best_match">Лучшее совпадение</string>
+    <string name="dv_loading">Ищем фильм</string>
+    <string name="dv_loading_message">Поиск может занять несколько секунд.</string>
+    <string name="dv_empty">Ничего не нашли</string>
+    <string name="dv_empty_message">Попробуйте добавить детали, которые запомнились лучше всего.</string>
+    <string name="dv_error">Поиск временно недоступен</string>
+    <string name="dv_error_message">Попробуйте ещё раз через минуту.</string>
+    <string name="dv_offline">Нет подключения к интернету</string>
+    <string name="dv_offline_message">Проверьте Wi-Fi или мобильный интернет.</string>
+    <string name="dv_file_error">Этот формат не подходит</string>
+    <string name="dv_file_error_message">Выберите другой файл и повторите поиск.</string>
+    <string name="dv_retry">Повторить</string>
+    <string name="dv_edit_description">Уточнить описание</string>
+    <string name="dv_choose_file">Выбрать другой файл</string>
+    <string name="dv_cancel">Отменить</string>
+</resources>
