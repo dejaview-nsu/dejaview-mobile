@@ -1,6 +1,7 @@
 package ru.dejaview.app
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -8,12 +9,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.model.SearchMode
 import ru.dejaview.navigation.HistoryRoute
 import ru.dejaview.navigation.LibraryRoute
@@ -30,7 +31,13 @@ internal fun AppNavHost(
     navController: NavHostController = rememberNavController(),
 ) {
     Scaffold { insets ->
-        Column(Modifier.fillMaxSize().padding(insets).padding(16.dp)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(insets)
+                .consumeWindowInsets(insets)
+                .padding(horizontal = DejaViewSpacing.screen),
+        ) {
             val badge = stringResource(R.string.demo_badge)
             if (badge.isNotEmpty()) Text(badge)
 
@@ -39,7 +46,7 @@ internal fun AppNavHost(
                     val route = entry.toRoute<SearchRoute>()
                     val mode = searchModes[route.mode]
                     if (mode == null) {
-                        Text(stringResource(R.string.search_placeholder))
+                        SearchFallback(route)
                     } else {
                         mode.Content(
                             draftId = route.draftId,

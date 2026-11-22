@@ -18,6 +18,11 @@ EMAIL = re.compile(r'[A-Za-z0-9_.+%-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})')
 GRADLE_WRAPPER_PATH = 'android/gradle/wrapper/gradle-wrapper.jar'
 # Gradle 8.12.1: https://gradle.org/release-checksums/
 GRADLE_WRAPPER_SHA256 = '2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046'
+# Reviewed Google Fonts binaries. See docs/dependencies.md for provenance.
+FONT_SHA256 = {
+    'android/core/ui/src/main/res/font/onest.ttf': '966c5c29b4755da84b6854d5c21dd4eaa2420225d0e9874de602de176d4a9f31',
+    'android/core/ui/src/main/res/font/unbounded.ttf': '323b511be380c8d474ef030686b71aedde501f8d9cd46da558b7c40454372c3f',
+}
 PRIVATE_EXTENSIONS = {'.fig', '.pdf', '.docx', '.xlsx', '.zip', '.jks', '.keystore', '.p12', '.pem'}
 MEDIA_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.mp3', '.wav'}
 
@@ -69,6 +74,10 @@ def scan(root, staged=False, deny_terms=()):
         if rel == GRADLE_WRAPPER_PATH:
             if hashlib.sha256(raw).hexdigest() != GRADLE_WRAPPER_SHA256:
                 findings.append((rel, 0, 'unverified-gradle-wrapper'))
+            continue
+        if rel in FONT_SHA256:
+            if hashlib.sha256(raw).hexdigest() != FONT_SHA256[rel]:
+                findings.append((rel, 0, 'unverified-font'))
             continue
         if path.suffix.lower() in PRIVATE_EXTENSIONS:
             findings.append((rel, 0, 'private-artifact-in-public-tree'))

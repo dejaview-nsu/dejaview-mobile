@@ -1,11 +1,13 @@
 package ru.dejaview.app
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import dagger.hilt.android.AndroidEntryPoint
+import ru.dejaview.core.ui.theme.DejaViewTheme
 import ru.dejaview.model.SearchMode
 import ru.dejaview.search.api.SearchModalityUi
 import javax.inject.Inject
@@ -17,9 +19,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+        )
         setContent {
-            MaterialTheme {
+            DejaViewTheme {
                 AppNavHost(searchModes = searchModes)
             }
         }

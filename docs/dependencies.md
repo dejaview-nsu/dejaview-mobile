@@ -8,3 +8,10 @@
 - Для gate используются Spotless 7.2.1 с ktlint 1.7.1 (Apache-2.0 и MIT), встроенный Android Lint, проверка фактического Gradle-графа, JaCoCo 0.8.13 (EPL-2.0), JUnit 4.13.2 (EPL-1.0) и AndroidX Test JUnit 1.3.0 (Apache-2.0). JaCoCo подключён к JVM-модулю маршрутов. Владельцы добавляют проверки своих модулей с появлением логики. [Spotless](https://github.com/diffplug/spotless) · [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/) · [AndroidX Test](https://developer.android.com/jetpack/androidx/releases/test)
 
 Версии закреплены в `android/gradle/libs.versions.toml`. Dev 1 ведёт совместимость toolchain и проверяет оба flavor при обновлении. Сетевые, медиа- и storage-библиотеки выбирают их владельцы в своих задачах.
+
+## D1-02
+
+- Onest и Unbounded из Google Fonts поставляются локально как variable TTF с лицензиями SIL OFL 1.1 в `core/ui/src/main/assets/licenses/`. Это гарнитуры из макета с кириллицей. Локальные ресурсы доступны офлайн и воспроизводимы на минимальном API 26, где Android уже поддерживает variable fonts. Начертания выбираются через Compose FontVariation. Dev 1 обновляет бинарники и лицензии совместно. [Onest](https://github.com/google/fonts/tree/main/ofl/onest) · [Unbounded](https://github.com/google/fonts/tree/main/ofl/unbounded) · [Compose fonts](https://developer.android.com/develop/ui/compose/text/fonts)
+
+- Каталог компонентов использует Compose `ui-tooling-preview` и `ui-tooling` 1.9.0 из текущего BOM только в debug. Проверки используют имеющиеся Compose Test и Android instrumentation. [Compose previews](https://developer.android.com/develop/ui/compose/tooling/previews)
+- Эталонный экран включается в demo. Jetpack `lifecycle-viewmodel-compose` и `lifecycle-runtime-compose` 2.9.0 добавлены явно на версии уже используемых Lifecycle-артефактов. Они обеспечивают область жизни ViewModel, сохранение черновика и lifecycle-aware сбор состояния. `kotlinx-coroutines-test` 1.8.1 применяется только в JVM-тестах demo для управляемого времени и отмены. Dev 1 ведёт эти зависимости. [Lifecycle](https://developer.android.com/jetpack/androidx/releases/lifecycle#2.9.0) · [Тесты корутин](https://developer.android.com/kotlin/coroutines/test)
