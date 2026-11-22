@@ -56,9 +56,11 @@ figma.ui.onmessage = async message => {
   const send = (name, value) => figma.ui.postMessage({type:'json', name, text:JSON.stringify(value, null, 2)});
   const bytes = (name, data) => figma.ui.postMessage({type:'bytes', name, bytes:data});
   try {
+    figma.ui.postMessage({type:'loading', currentPage:message.currentPage});
     if (!message.currentPage) await figma.loadAllPagesAsync();
     const pages = message.currentPage ? [figma.currentPage] : figma.root.children;
     const frames = pages.flatMap(page => framesFrom(page).map(node => ({node, page})));
+    figma.ui.postMessage({type:'progress', done:0, total:frames.length});
     const manifest = {format:'private-figma-export-v1', scope:message.currentPage ? 'current-page' : 'all-pages',
       frames:[], errors, omissions:['comments','edit-history','account-identities','remote-library-definitions','font-binaries']};
     let index = 0;
