@@ -8,4 +8,7 @@ plugins {
 
 dependencies {
     implementation(project(":feature:search-api"))
+    val demoImplementation by configurations
+    demoImplementation(libs.lifecycle.runtime.compose)
+    demoImplementation(libs.lifecycle.viewmodel.compose)
 }

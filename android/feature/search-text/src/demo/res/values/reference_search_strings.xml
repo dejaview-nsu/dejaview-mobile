@@ -1,0 +1,9 @@
+<resources>
+    <string name="reference_search_title">Поиск по описанию</string>
+    <string name="reference_search_heading">Что вы помните о фильме?</string>
+    <string name="reference_search_explanation">Опишите сцену, сюжет или героев своими словами.</string>
+    <string name="reference_search_description">Описание фильма</string>
+    <string name="reference_search_example">Например, пилот отправляется в космос</string>
+    <string name="reference_search_count">%1$d / %2$d · От 3 символов</string>
+    <string name="reference_search_submit">Найти фильм</string>
+</resources>

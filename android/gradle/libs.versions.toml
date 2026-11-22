@@ -4,6 +4,7 @@ kotlin = "2.2.10"
 ksp = "2.2.10-2.0.2"
 hilt = "2.57.2"
 compose = "2025.08.01"
+lifecycle = "2.9.0"
 navigation = "2.9.3"
 activity = "1.10.1"
 serialization = "1.9.0"
@@ -25,6 +26,8 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-tooling = { module = "androidx.compose.ui:ui-tooling" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 compose-test = { module = "androidx.compose.ui:ui-test-junit4" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navigation" }

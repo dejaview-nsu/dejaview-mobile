@@ -1,7 +1,6 @@
 package ru.dejaview.app
 
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -12,6 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import ru.dejaview.core.ui.theme.DejaViewTheme
 import ru.dejaview.model.MovieList
 import ru.dejaview.model.SearchMode
 import ru.dejaview.navigation.HistoryRoute
@@ -30,7 +30,7 @@ class AppNavHostTest {
 
     @Test
     fun launchesSearchWithBadgeOnlyInDemo() {
-        assertScreen(R.string.search_placeholder)
+        assertStartScreen()
         val badge = compose.onNodeWithText("Демо")
         if (compose.activity.packageName.endsWith(".demo")) {
             badge.assertIsDisplayed()
@@ -48,12 +48,13 @@ class AppNavHostTest {
                     navigatorProvider.addNavigator(ComposeNavigator())
                 }
             compose.activity.setContent {
-                MaterialTheme {
+                DejaViewTheme {
                     AppNavHost(searchModes = emptyMap(), navController = navController)
                 }
             }
         }
-        assertDestination(SearchRoute(SearchMode.TEXT), R.string.search_placeholder)
+        assertStartScreen()
+        compose.runOnIdle { assertEquals(SearchRoute(SearchMode.TEXT), navController.currentBackStackEntry?.toRoute<SearchRoute>()) }
         navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_placeholder)
         navigateTo(ResultsRoute("request/?#Ю"), R.string.results_placeholder)
         navigateTo(MovieRoute(Long.MAX_VALUE), R.string.movie_placeholder)
@@ -79,6 +80,14 @@ class AppNavHostTest {
     ) {
         assertScreen(title)
         compose.runOnIdle { assertEquals(route, navController.currentBackStackEntry?.toRoute<T>()) }
+    }
+
+    private fun assertStartScreen() {
+        if (compose.activity.packageName.endsWith(".demo")) {
+            compose.onNodeWithText("Поиск по описанию").assertIsDisplayed()
+        } else {
+            assertScreen(R.string.search_placeholder)
+        }
     }
 
     private fun assertScreen(title: Int) {
