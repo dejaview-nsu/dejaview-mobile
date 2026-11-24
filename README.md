@@ -20,6 +20,20 @@ python scripts/quality_gate.py
 
 В Linux/macOS команда сборки из корня репозитория — `./android/gradlew -p android :app:assembleDemoDebug :app:assembleProdDebug`. APK находятся в `android/app/build/outputs/apk/`. Для smoke-тестов подключите устройство или запустите эмулятор и выполните `python scripts/quality_gate.py --ui` из корня репозитория.
 
+## Вход и аудиопоиск
+
+На стартовом экране выберите «Аудиопоиск». После входа приложение откроет выбор документа или запись с микрофона. Отправка начинается по кнопке «Найти фильм». Выйти из аккаунта можно в профиле.
+
+В `demoDebug` подойдут синтетическое имя `viewer` и любой непустой пароль. Имена `invalid`, `unconfirmed`, `blocked`, `captcha`, `locked`, `offline` и `error` включают соответствующие ответы формы. Аудиофрагмент короче секунды даёт пустую выдачу, более длинный допустимый фрагмент — один демонстрационный фильм.
+
+Для `prodDebug` передайте Gradle-свойство `-PdejaviewApiOrigin=https://<host>` при сборке. Укажите HTTPS origin стенда без пути. Адаптер добавляет `/api/v1`. Без адреса форма показывает ошибку конфигурации. Для серверного CAPTCHA остаётся открытым Q-03 — нужны доверенная страница, origin и согласованный возврат одноразового токена.
+
+Свойство `dejaviewApiOrigin` также можно задать локально в `android/local.properties`. Готовый `app-prod-debug.apk` устанавливается на Android 8.0 (API 26) и новее. Для повторного живого smoke на выделенном тестовом телефоне или эмуляторе Android 10+ сначала соберите `:app:assembleProdDebug :app:assembleProdDebugAndroidTest`, затем выполните команду ниже. Скрипт установит обе сборки, запросит данные тестового аккаунта, отправит короткий синтетический WAV и завершит созданную сессию.
+
+```text
+python scripts/staging_audio_smoke.py --serial <serial-из-adb-devices> --origin https://<host>
+```
+
 ## Документация
 
 - [Общий план и календарь](docs/planning/README.md)

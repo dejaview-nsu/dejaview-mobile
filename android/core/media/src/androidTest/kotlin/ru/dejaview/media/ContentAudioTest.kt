@@ -15,6 +15,23 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class ContentAudioTest {
+    @Test fun startupRemovesAbandonedFilesAndKeepsCurrentRecordings() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val directory = java.io.File(context.cacheDir, "audio-drafts")
+        directory.mkdirs()
+        val abandoned = java.io.File.createTempFile("old-", ".tmp", directory)
+        val store = AudioDraftStore(context)
+        store.prepareCache()
+        assertFalse(abandoned.exists())
+        val recording = store.temporary()
+        try {
+            store.prepareCache()
+            assertTrue(recording.isFile)
+        } finally {
+            store.discardUnregistered(recording)
+        }
+    }
+
     @Test fun readsRealContentUriValidatesContainerAndDeletesCopy() =
         runBlocking {
             assumeTrue(Build.VERSION.SDK_INT >= 29)

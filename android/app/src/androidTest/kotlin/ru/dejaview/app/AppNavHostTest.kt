@@ -37,7 +37,7 @@ class AppNavHostTest {
         } else {
             badge.assertDoesNotExist()
         }
-        assertTrue(compose.activity.searchModes.isEmpty())
+        assertEquals(setOf(SearchMode.AUDIO), compose.activity.searchModes.keys)
     }
 
     @Test
@@ -49,7 +49,7 @@ class AppNavHostTest {
                 }
             compose.activity.setContent {
                 DejaViewTheme {
-                    AppNavHost(searchModes = emptyMap(), navController = navController)
+                    AppNavHost(searchModes = emptyMap(), services = compose.activity.sessions, navController = navController)
                 }
             }
         }

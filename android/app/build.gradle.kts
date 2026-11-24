@@ -49,6 +49,10 @@ hilt {
 }
 
 dependencies {
+    implementation(project(":core:contracts"))
+    implementation(project(":core:media"))
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
     implementation(project(":core:model"))
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
@@ -73,6 +77,7 @@ dependencies {
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.runner)
     androidTestImplementation(libs.compose.test)
     androidTestImplementation(libs.navigation.testing)
 }

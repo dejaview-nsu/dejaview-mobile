@@ -20,6 +20,7 @@ import dagger.multibindings.IntoMap
 import ru.dejaview.audio.domain.AudioSearch
 import ru.dejaview.audio.presentation.AudioScreen
 import ru.dejaview.audio.presentation.AudioViewModel
+import ru.dejaview.contracts.media.MediaStore
 import ru.dejaview.contracts.session.SessionReader
 import ru.dejaview.contracts.session.SessionState
 import ru.dejaview.media.AudioDraftStore
@@ -33,6 +34,8 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal interface AudioModule {
+    @Binds fun mediaStore(store: AudioDraftStore): MediaStore
+
     @Binds @IntoMap
     @SearchModeKey(SearchMode.AUDIO)
     fun audio(mode: AudioMode): SearchModalityUi

@@ -1,4 +1,11 @@
 <resources>
+    <string name="open_audio">Аудиопоиск</string>
+    <string name="open_login">Войти</string>
+    <string name="logout">Выйти</string>
+    <string name="audio_requires_login">Чтобы искать по аудио, войдите в аккаунт.</string>
+    <string name="audio_empty">Совпадений не найдено</string>
+    <string name="logout_unconfirmed">Вы вышли на устройстве. Сервер не подтвердил завершение сессии.</string>
+    <string name="notice_close">Закрыть</string>
     <string name="app_name" translatable="false">DejaView</string>
     <string name="search_placeholder">Поиск фильмов</string>
     <string name="results_placeholder">Результаты поиска</string>

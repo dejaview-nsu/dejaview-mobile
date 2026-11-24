@@ -17,6 +17,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var searchModes: Map<SearchMode, @JvmSuppressWildcards SearchModalityUi>
 
+    @Inject lateinit var sessions: SessionServices
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -25,7 +27,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             DejaViewTheme {
-                AppNavHost(searchModes = searchModes)
+                AppNavHost(searchModes = searchModes, services = sessions)
             }
         }
     }

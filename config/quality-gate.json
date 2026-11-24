@@ -4,17 +4,24 @@
       {"group": "format", "argv": ["gradlew", "spotlessCheck"]},
       {"group": "static", "argv": ["gradlew", ":app:lintDemoDebug", ":app:lintProdDebug"]},
       {"group": "architecture", "argv": ["gradlew", "checkArchitecture"]},
-      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", ":feature:search-text:testDemoDebugUnitTest", "--rerun-tasks"]},
+      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", ":core:media:testDebugUnitTest", ":core:security:testDebugUnitTest", ":feature:auth:testDemoDebugUnitTest", ":feature:auth:testProdDebugUnitTest", ":feature:search-audio:testProdDebugUnitTest", ":feature:search-text:testDemoDebugUnitTest", "--rerun-tasks"]},
       {"group": "coverage", "argv": ["gradlew", ":core:navigation:jacocoTestCoverageVerification", ":feature:search-text:verifyReferenceSearchCoverage"]},
       {"group": "build-demo", "argv": ["gradlew", "assembleDemoDebug", ":core:media:assembleDebug", ":core:network:assembleDebug", ":core:security:assembleDebug", ":core:storage:assembleDebug", ":core:testing:assemble"]},
       {"group": "build-prod", "argv": ["gradlew", "assembleProdDebug"]},
-      {"group": "ui", "argv": ["gradlew", ":app:connectedDemoDebugAndroidTest", "--rerun", ":app:connectedProdDebugAndroidTest", "--rerun"]}
+      {"group": "ui", "argv": ["gradlew", ":core:security:connectedDebugAndroidTest", "--rerun", ":core:media:connectedDebugAndroidTest", "--rerun", ":app:connectedDemoDebugAndroidTest", "--rerun", ":app:connectedProdDebugAndroidTest", "--rerun"]}
     ],
     "junit_reports": [
       "core/navigation/build/test-results/test/TEST-*.xml",
+      "core/security/build/test-results/testDebugUnitTest/TEST-*.xml",
+      "core/media/build/test-results/testDebugUnitTest/TEST-*.xml",
+      "feature/auth/build/test-results/testDemoDebugUnitTest/TEST-*.xml",
+      "feature/auth/build/test-results/testProdDebugUnitTest/TEST-*.xml",
+      "feature/search-audio/build/test-results/testProdDebugUnitTest/TEST-*.xml",
       "feature/search-text/build/test-results/testDemoDebugUnitTest/TEST-*.xml"
     ],
     "ui_junit_reports": [
+      "core/security/build/outputs/androidTest-results/connected/debug/TEST-*.xml",
+      "core/media/build/outputs/androidTest-results/connected/debug/TEST-*.xml",
       "app/build/outputs/androidTest-results/connected/debug/flavors/demo/TEST-*.xml",
       "app/build/outputs/androidTest-results/connected/debug/flavors/prod/TEST-*.xml"
     ]

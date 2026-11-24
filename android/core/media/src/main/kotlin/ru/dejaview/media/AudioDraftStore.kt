@@ -32,13 +32,20 @@ internal fun validateAudio(
 class AudioDraftStore(
     private val context: Context,
 ) : MediaStore {
-    private val directory by lazy {
-        File(context.cacheDir, "audio-drafts").apply {
-            mkdirs()
-            listFiles()?.filter { it.isFile }?.forEach { it.delete() }
+    private val cacheDirectory =
+        lazy {
+            File(context.cacheDir, "audio-drafts").apply {
+                mkdirs()
+                listFiles()?.filter { it.isFile }?.forEach { it.delete() }
+            }
         }
-    }
+    private val directory by cacheDirectory
     private val drafts = ConcurrentHashMap<String, Pair<PreparedMedia, File>>()
+
+    fun prepareCache() {
+        // Share initialization with temporary() if the picker opens during startup.
+        cacheDirectory.value
+    }
 
     fun temporary(): File = File.createTempFile("draft-", ".tmp", directory)
 
