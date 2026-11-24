@@ -34,6 +34,8 @@ python scripts/quality_gate.py
 python scripts/staging_audio_smoke.py --serial <serial-из-adb-devices> --origin https://<host>
 ```
 
+Для аппаратной проверки автостопа на выделенном телефоне запустите Gradle-задачу `:app:connectedDemoDebugAndroidTest` с параметром `-Pandroid.testInstrumentationRunnerArguments.recordSmoke=true`. Тест включает микрофон примерно на десять секунд, проверяет готовность записи к прослушиванию, запускает проигрыватель и удаляет фрагмент.
+
 ## Документация
 
 - [Общий план и календарь](docs/planning/README.md)

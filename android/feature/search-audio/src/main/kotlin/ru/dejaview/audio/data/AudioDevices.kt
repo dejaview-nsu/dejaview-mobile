@@ -6,6 +6,12 @@ import ru.dejaview.media.AUDIO_MS
 import ru.dejaview.media.AudioDraftStore
 import java.io.File
 
+private const val SAMPLE_RATE_HZ = 48_000
+private const val AAC_SAMPLES_PER_FRAME = 1024
+
+// MPEG4Writer signals the limit after a frame is written. Reserve two frames for finalization.
+private const val FINAL_FRAMES_MS = (2 * AAC_SAMPLES_PER_FRAME * 1000 + SAMPLE_RATE_HZ - 1) / SAMPLE_RATE_HZ
+
 internal class AudioDevices(
     private val store: AudioDraftStore,
 ) {
@@ -26,8 +32,11 @@ internal class AudioDevices(
         mic.setAudioSource(MediaRecorder.AudioSource.MIC)
         mic.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         mic.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        mic.setAudioSamplingRate(SAMPLE_RATE_HZ)
+        mic.setAudioChannels(1)
+        mic.setAudioEncodingBitRate(96_000)
         mic.setOutputFile(file.absolutePath)
-        mic.setMaxDuration(AUDIO_MS.toInt())
+        mic.setMaxDuration(AUDIO_MS.toInt() - FINAL_FRAMES_MS)
         mic.setOnInfoListener { source, what, _ ->
             if (source === recorder && what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) finished()
         }
