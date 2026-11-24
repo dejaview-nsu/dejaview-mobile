@@ -4,6 +4,13 @@ plugins {
 }
 
 dependencies {
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.runner)
+    implementation(libs.okhttp)
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
     implementation(project(":core:contracts"))
     implementation(project(":core:model"))
 }
+
+android.defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
