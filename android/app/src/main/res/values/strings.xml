@@ -12,4 +12,5 @@
     <string name="search_login_message">Войдите, чтобы искать по кадру, видео или звуку.</string>
     <string name="search_demo_login">Войти в деморежиме</string>
     <string name="search_login_cancel">Отмена</string>
+    <string name="search_session_loading">Проверяем сессию</string>
 </resources>

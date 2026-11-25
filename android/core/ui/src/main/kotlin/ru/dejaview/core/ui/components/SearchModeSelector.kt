@@ -31,7 +31,7 @@ private val TILE_ICON_SIZE = 28.dp
 
 @Composable
 fun SearchModeSelector(
-    selectedMode: SearchMode,
+    selectedMode: SearchMode?,
     onModeSelected: (SearchMode) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
