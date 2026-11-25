@@ -13,9 +13,9 @@ import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
+import ru.dejaview.search.text.reference.domain.ReferenceSearch
 import java.time.Instant
 import java.util.UUID
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
 
 internal const val MIN_QUERY_LENGTH = 3
 internal const val MAX_QUERY_LENGTH = 250

@@ -11,15 +11,22 @@ import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import java.time.Instant
 
-internal class TestSession(initial: SessionState = SessionState.Guest) : SessionReader {
+internal class TestSession(
+    initial: SessionState = SessionState.Guest,
+) : SessionReader {
     override val state = MutableStateFlow(initial)
 }
 
-internal class TestHistory(private val fails: Boolean = false) : HistoryRepository {
+internal class TestHistory(
+    private val fails: Boolean = false,
+) : HistoryRepository {
     val entries = mutableMapOf<String?, MutableStateFlow<List<SearchCompletion>>>()
     val writes = mutableListOf<Pair<String?, SearchCompletion>>()
 
-    override suspend fun record(completion: SearchCompletion, accountScope: String?): AppResult<Unit> {
+    override suspend fun record(
+        completion: SearchCompletion,
+        accountScope: String?,
+    ): AppResult<Unit> {
         writes += accountScope to completion
         if (fails) return AppResult.Failure(AppError.ServiceUnavailable())
         val entry = observe(accountScope)

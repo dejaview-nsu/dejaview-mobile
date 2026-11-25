@@ -31,10 +31,16 @@ internal fun searchViewModel(
     )
 }
 
-internal fun NavHostController.openSearch(route: SearchRoute, vm: SearchViewModel) {
+internal fun NavHostController.openSearch(
+    route: SearchRoute,
+    vm: SearchViewModel,
+) {
     val pendingId = vm.requestLogin(route)
-    if (pendingId == null) navigate(route) { launchSingleTop = true }
-    else navigate(LoginRoute(pendingId))
+    if (pendingId == null) {
+        navigate(route) { launchSingleTop = true }
+    } else {
+        navigate(LoginRoute(pendingId))
+    }
 }
 
 @Composable

@@ -21,14 +21,11 @@ class SearchViewModel(
     private val results = SearchResultStore()
     private var resultScope = session.value.accountScope
 
-    fun canOpen(mode: SearchMode): Boolean =
-        mode == SearchMode.TEXT || session.value is SessionState.Authenticated
+    fun canOpen(mode: SearchMode): Boolean = mode == SearchMode.TEXT || session.value is SessionState.Authenticated
 
-    fun requestLogin(route: SearchRoute): String? =
-        if (canOpen(route.mode)) null else pendingActions.put(route)
+    fun requestLogin(route: SearchRoute): String? = if (canOpen(route.mode)) null else pendingActions.put(route)
 
-    fun finishLogin(actionId: String?): SearchRoute? =
-        pendingActions.take(actionId)?.takeIf { canOpen(it.mode) }
+    fun finishLogin(actionId: String?): SearchRoute? = pendingActions.take(actionId)?.takeIf { canOpen(it.mode) }
 
     fun cancelLogin(actionId: String?) {
         pendingActions.take(actionId)

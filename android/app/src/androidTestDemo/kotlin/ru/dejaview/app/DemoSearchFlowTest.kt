@@ -18,7 +18,10 @@ class DemoSearchFlowTest {
 
     @Before
     fun beginAsGuest() {
-        compose.runOnIdle { compose.activity.searchServices.defaults.expire() }
+        compose.runOnIdle {
+            compose.activity.searchServices.defaults
+                .expire()
+        }
     }
 
     @Test

@@ -17,7 +17,8 @@ import javax.inject.Singleton
 @Singleton
 internal class SearchDefaults
     @Inject
-    constructor() : SessionReader,
+    constructor() :
+    SessionReader,
         HistoryRepository {
         private val mutableState = MutableStateFlow<SessionState>(SessionState.Guest)
         override val state = mutableState.asStateFlow()
@@ -38,12 +39,18 @@ internal class SearchDefaults
             accountScope: String?,
         ): AppResult<Unit> {
             if (accountScope != null && (state.value as? SessionState.Authenticated)?.accountScope != accountScope) {
-                return AppResult.Failure(ru.dejaview.contracts.AppError.Unauthenticated())
+                return AppResult.Failure(
+                    ru.dejaview.contracts.AppError
+                        .Unauthenticated(),
+                )
             }
             entries.update { current ->
                 val previous = current[accountScope].orEmpty()
-                if (previous.any { it.requestId == completion.requestId }) current
-                else current + (accountScope to (listOf(completion) + previous))
+                if (previous.any { it.requestId == completion.requestId }) {
+                    current
+                } else {
+                    current + (accountScope to (listOf(completion) + previous))
+                }
             }
             return AppResult.Success(Unit)
         }

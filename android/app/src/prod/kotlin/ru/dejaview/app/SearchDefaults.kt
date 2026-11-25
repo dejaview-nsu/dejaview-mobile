@@ -13,15 +13,18 @@ import javax.inject.Inject
 
 internal class SearchDefaults
     @Inject
-    constructor() : SessionReader,
+    constructor() :
+    SessionReader,
         HistoryRepository {
         override val state = MutableStateFlow<SessionState>(SessionState.Guest).asStateFlow()
         val demoLogin: (() -> Unit)? = null
 
         fun expire() = Unit
 
-        override suspend fun record(completion: SearchCompletion, accountScope: String?) =
-            AppResult.Failure(AppError.ServiceUnavailable())
+        override suspend fun record(
+            completion: SearchCompletion,
+            accountScope: String?,
+        ) = AppResult.Failure(AppError.ServiceUnavailable())
 
         override fun observe(accountScope: String?) = flowOf(emptyList<SearchCompletion>())
 

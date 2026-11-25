@@ -63,8 +63,11 @@ internal fun SearchResultsDestination(
             restoring = result == null,
             onReturn = {
                 if (nav.isActive(entry)) {
-                    if (nav.previousBackStackEntry?.destination?.hasRoute<SearchRoute>() == true) nav.popBackStack()
-                    else nav.popBackStack<SearchHomeRoute>(inclusive = false)
+                    if (nav.previousBackStackEntry?.destination?.hasRoute<SearchRoute>() == true) {
+                        nav.popBackStack()
+                    } else {
+                        nav.popBackStack<SearchHomeRoute>(inclusive = false)
+                    }
                 }
             },
             onMovie = { movieId ->

@@ -33,7 +33,10 @@ class AppNavHostTest {
 
     @Before
     fun beginWithoutAnActiveSession() {
-        compose.runOnIdle { compose.activity.searchServices.defaults.expire() }
+        compose.runOnIdle {
+            compose.activity.searchServices.defaults
+                .expire()
+        }
     }
 
     @Test
