@@ -49,6 +49,7 @@ hilt {
 }
 
 dependencies {
+    implementation(project(":core:contracts"))
     implementation(project(":core:model"))
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
