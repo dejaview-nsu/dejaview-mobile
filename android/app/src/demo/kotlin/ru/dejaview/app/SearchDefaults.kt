@@ -38,12 +38,6 @@ internal class SearchDefaults
             completion: SearchCompletion,
             accountScope: String?,
         ): AppResult<Unit> {
-            if (accountScope != null && (state.value as? SessionState.Authenticated)?.accountScope != accountScope) {
-                return AppResult.Failure(
-                    ru.dejaview.contracts.AppError
-                        .Unauthenticated(),
-                )
-            }
             entries.update { current ->
                 val previous = current[accountScope].orEmpty()
                 if (previous.any { it.requestId == completion.requestId }) {

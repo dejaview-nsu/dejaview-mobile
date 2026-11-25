@@ -43,7 +43,9 @@ class SearchViewModel(
         updateResultScope(scope)
         if (!results.add(completion)) return false
 
-        viewModelScope.launch { history.record(completion, scope) }
+        viewModelScope.launch {
+            if (session.value.accountScope == scope) history.record(completion, scope)
+        }
         return true
     }
 

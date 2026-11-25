@@ -64,6 +64,23 @@ class SearchCompletionTest {
         }
 
     @Test
+    fun skipsAQueuedHistoryWriteAfterSessionExpires() =
+        runTest {
+            val owner = signedIn()
+            val session = TestSession(owner)
+            val history = TestHistory()
+            val vm = SearchViewModel(session, history)
+            val result = syntheticCompletion(mode = SearchMode.IMAGE)
+
+            assertTrue(vm.complete(result, SearchMode.IMAGE, owner))
+            session.state.value = SessionState.Expired
+            runCurrent()
+
+            assertTrue(history.writes.isEmpty())
+            assertNull(vm.result(result.requestId))
+        }
+
+    @Test
     fun rejectsMismatchedModeAndLateCompletionFromOldSession() =
         runTest {
             val previous = signedIn()
