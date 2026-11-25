@@ -14,5 +14,5 @@ internal fun SearchFallback(
     onCompleted: (SearchCompletion) -> Unit,
     modifier: Modifier,
 ) {
-    Text(stringResource(R.string.search_placeholder), modifier = modifier)
+    Text(stringResource(R.string.search_mode_unavailable), modifier = modifier)
 }

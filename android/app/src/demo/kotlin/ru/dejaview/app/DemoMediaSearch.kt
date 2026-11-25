@@ -33,6 +33,7 @@ internal fun DemoMediaSearch(
         val size = count ?: return@LaunchedEffect
         val requestId = UUID.randomUUID().toString()
         delay(650)
+        if (count != size) return@LaunchedEffect
         val movies = List(size) { index -> MovieSummary((index + 1).toLong(), "$title ${index + 1}") }
         count = null
         onCompleted(SearchCompletion(requestId, mode, movies, input, Instant.now()))
