@@ -1,10 +1,8 @@
 package ru.dejaview.app
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -14,14 +12,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import ru.dejaview.contracts.session.SessionState
-import ru.dejaview.model.SearchCompletion
 import ru.dejaview.navigation.LoginRoute
-import ru.dejaview.navigation.MovieRoute
 import ru.dejaview.navigation.ResultsRoute
-import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
 import ru.dejaview.search.api.SearchModalityUi
-import ru.dejaview.search.presentation.SearchResultsScreen
 import ru.dejaview.search.presentation.SearchViewModel
 
 @Composable

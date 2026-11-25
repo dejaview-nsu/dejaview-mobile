@@ -2,7 +2,6 @@ package ru.dejaview.search.presentation
 
 import ru.dejaview.model.RequestId
 import ru.dejaview.model.SearchCompletion
-import ru.dejaview.model.SearchMode
 import ru.dejaview.navigation.SearchRoute
 import java.util.UUID
 
