@@ -7,13 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import ru.dejaview.contracts.session.SessionState
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.model.SearchMode
 import ru.dejaview.navigation.HistoryRoute
@@ -46,7 +49,13 @@ internal fun AppNavHost(
             NavHost(navController = navController, startDestination = SearchHomeRoute) {
                 composable<SearchHomeRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
-                    SearchHome { mode ->
+                    val session by vm.session.collectAsStateWithLifecycle()
+                    SearchHome(
+                        guest = session == SessionState.Guest || session == SessionState.Expired,
+                        onLogin = {
+                            if (navController.isActive(entry)) navController.navigate(LoginRoute())
+                        },
+                    ) { mode ->
                         if (navController.isActive(entry)) navController.openSearch(SearchRoute(mode), vm)
                     }
                 }
