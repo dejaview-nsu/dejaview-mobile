@@ -10,6 +10,7 @@ import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import ru.dejaview.core.ui.theme.DejaViewTheme
@@ -29,6 +30,11 @@ class AppNavHostTest {
     val compose = createAndroidComposeRule<MainActivity>()
 
     private lateinit var navController: TestNavHostController
+
+    @Before
+    fun beginWithoutAnActiveSession() {
+        compose.runOnIdle { compose.activity.searchServices.defaults.expire() }
+    }
 
     @Test
     fun launchesSearchWithBadgeOnlyInDemo() {
@@ -60,7 +66,7 @@ class AppNavHostTest {
         }
         assertStartScreen()
         compose.runOnIdle { assertEquals(SearchHomeRoute, navController.currentBackStackEntry?.toRoute<SearchHomeRoute>()) }
-        navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_placeholder)
+        navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_login_required)
         navigateTo(ResultsRoute("request/?#Ю"), ru.dejaview.feature.search.R.string.search_result_unavailable)
         navigateTo(MovieRoute(Long.MAX_VALUE), R.string.movie_placeholder)
         navigateTo(LoginRoute("action/?#Ю"), R.string.search_login_required)
@@ -89,14 +95,14 @@ class AppNavHostTest {
 
     @Test
     fun cancellingProtectedModeLoginReturnsToTheModePicker() {
-        compose.onNodeWithText("????").performClick()
+        compose.onNodeWithText("Кадр").performClick()
         assertScreen(R.string.search_login_required)
-        compose.onNodeWithText("??????").performClick()
+        compose.onNodeWithText("Отмена").performClick()
         assertStartScreen()
     }
 
     private fun assertStartScreen() {
-        listOf("????????", "????", "?????", "????").forEach { mode ->
+        listOf("Описание", "Кадр", "Видео", "Звук").forEach { mode ->
             compose.onNodeWithText(mode).assertIsDisplayed()
         }
     }
