@@ -1,5 +1,6 @@
 package ru.dejaview.app
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,15 +36,20 @@ internal fun SearchLoginDestination(
             if (target != null) nav.openSearch(target, vm)
         }
     }
-    SearchLoginScreen(
-        onCancel = {
-            if (nav.currentBackStackEntry == entry) {
-                vm.cancelLogin(route.pendingActionId)
-                nav.popBackStack()
-            }
-        },
-        onDemoLogin = services.demoLogin,
-    )
+    val cancel = {
+        if (nav.currentBackStackEntry == entry) {
+            vm.cancelLogin(route.pendingActionId)
+            nav.popBackStack()
+        }
+        Unit
+    }
+    BackHandler(onBack = cancel)
+    val login = services.login
+    if (login == null) {
+        SearchLoginScreen(onCancel = cancel, onDemoLogin = services.demoLogin)
+    } else {
+        login.Content(onCancel = cancel)
+    }
 }
 
 @Composable

@@ -1,6 +1,5 @@
 package ru.dejaview.app
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +18,6 @@ internal fun SearchLoginScreen(
     onCancel: () -> Unit,
     onDemoLogin: (() -> Unit)?,
 ) {
-    BackHandler(onBack = onCancel)
     Column(
         Modifier.fillMaxWidth().padding(vertical = DejaViewSpacing.large),
         verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
