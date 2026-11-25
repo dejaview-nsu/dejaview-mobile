@@ -4,6 +4,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
@@ -20,6 +21,7 @@ import ru.dejaview.navigation.LoginRoute
 import ru.dejaview.navigation.MovieRoute
 import ru.dejaview.navigation.ProfileRoute
 import ru.dejaview.navigation.ResultsRoute
+import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
 
 class AppNavHostTest {
@@ -37,7 +39,6 @@ class AppNavHostTest {
         } else {
             badge.assertDoesNotExist()
         }
-        assertTrue(compose.activity.searchModes.isEmpty())
     }
 
     @Test
@@ -49,16 +50,20 @@ class AppNavHostTest {
                 }
             compose.activity.setContent {
                 DejaViewTheme {
-                    AppNavHost(searchModes = emptyMap(), navController = navController)
+                    AppNavHost(
+                        searchModes = emptyMap(),
+                        searchServices = compose.activity.searchServices,
+                        navController = navController,
+                    )
                 }
             }
         }
         assertStartScreen()
-        compose.runOnIdle { assertEquals(SearchRoute(SearchMode.TEXT), navController.currentBackStackEntry?.toRoute<SearchRoute>()) }
+        compose.runOnIdle { assertEquals(SearchHomeRoute, navController.currentBackStackEntry?.toRoute<SearchHomeRoute>()) }
         navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_placeholder)
-        navigateTo(ResultsRoute("request/?#Ю"), R.string.results_placeholder)
+        navigateTo(ResultsRoute("request/?#Ю"), ru.dejaview.feature.search.R.string.search_result_unavailable)
         navigateTo(MovieRoute(Long.MAX_VALUE), R.string.movie_placeholder)
-        navigateTo(LoginRoute("action/?#Ю"), R.string.login_placeholder)
+        navigateTo(LoginRoute("action/?#Ю"), R.string.search_login_required)
         navigateTo(LibraryRoute(MovieList.WATCHED), R.string.library_placeholder)
         navigateTo(ProfileRoute, R.string.profile_placeholder)
         navigateTo(HistoryRoute, R.string.history_placeholder)
@@ -82,11 +87,17 @@ class AppNavHostTest {
         compose.runOnIdle { assertEquals(route, navController.currentBackStackEntry?.toRoute<T>()) }
     }
 
+    @Test
+    fun cancellingProtectedModeLoginReturnsToTheModePicker() {
+        compose.onNodeWithText("????").performClick()
+        assertScreen(R.string.search_login_required)
+        compose.onNodeWithText("??????").performClick()
+        assertStartScreen()
+    }
+
     private fun assertStartScreen() {
-        if (compose.activity.packageName.endsWith(".demo")) {
-            compose.onNodeWithText("Поиск по описанию").assertIsDisplayed()
-        } else {
-            assertScreen(R.string.search_placeholder)
+        listOf("????????", "????", "?????", "????").forEach { mode ->
+            compose.onNodeWithText(mode).assertIsDisplayed()
         }
     }
 
