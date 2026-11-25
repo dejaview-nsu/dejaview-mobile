@@ -30,9 +30,10 @@ class SearchModeIntegrationTest {
     fun externalModeUsesSharedResultsAndDuplicateCompletionDoesNotReopenThem() {
         val session =
             object : SessionReader {
-                override val state = MutableStateFlow<SessionState>(
-                    SessionState.Authenticated("Демо", Instant.MAX, "integration-scope"),
-                )
+                override val state =
+                    MutableStateFlow<SessionState>(
+                        SessionState.Authenticated("Демо", Instant.MAX, "integration-scope"),
+                    )
             }
         compose.runOnUiThread {
             val services = SearchServices(Optional.of(session), Optional.empty(), compose.activity.searchServices.defaults)
@@ -59,13 +60,14 @@ class SearchModeIntegrationTest {
             onCompleted: (SearchCompletion) -> Unit,
             modifier: Modifier,
         ) {
-            val completion = SearchCompletion(
-                "external-video-result",
-                mode,
-                listOf(MovieSummary(1, "Синтетический фильм")),
-                "Синтетический запрос",
-                Instant.EPOCH,
-            )
+            val completion =
+                SearchCompletion(
+                    "external-video-result",
+                    mode,
+                    listOf(MovieSummary(1, "Синтетический фильм")),
+                    "Синтетический запрос",
+                    Instant.EPOCH,
+                )
             TextButton(modifier = modifier, onClick = {
                 repeat(2) { onCompleted(completion) }
             }) {
