@@ -28,9 +28,10 @@ fun SearchResultsScreen(
     onMovie: (MovieId) -> Unit,
 ) {
     val back = stringResource(R.string.search_return)
+    val hasMatches = !restoring && !completion?.results.isNullOrEmpty()
     LazyColumn(
         Modifier.fillMaxSize().padding(vertical = DejaViewSpacing.large),
-        verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
+        verticalArrangement = if (hasMatches) Arrangement.spacedBy(DejaViewSpacing.large) else Arrangement.Center,
     ) {
         when {
             restoring -> item { ContentFeedback(FeedbackKind.Loading, onAction = onReturn) }

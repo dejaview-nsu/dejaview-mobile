@@ -6,8 +6,10 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +46,9 @@ class DemoSearchFlowTest {
         waitForText("Показать результаты (0)")
         compose.onNodeWithText("Показать результаты (0)").performClick()
         waitForText("Вернуться к поиску")
+        val title = compose.onNodeWithText("Ничего не нашли").fetchSemanticsNode().boundsInRoot
+        val viewport = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        assertTrue(title.center.y > viewport.top + viewport.height / 4)
         compose.onNodeWithText("Вернуться к поиску").performClick()
         compose.onNodeWithText("Показать результаты (0)").assertIsDisplayed()
     }
