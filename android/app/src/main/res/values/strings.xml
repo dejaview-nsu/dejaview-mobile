@@ -7,4 +7,9 @@
     <string name="library_placeholder">Библиотека</string>
     <string name="profile_placeholder">Профиль</string>
     <string name="history_placeholder">История</string>
+    <string name="search_login_required">Нужен вход</string>
+    <string name="search_login_unavailable">Вход пока недоступен</string>
+    <string name="search_login_message">Войдите, чтобы искать по кадру, видео или звуку.</string>
+    <string name="search_demo_login">Войти в деморежиме</string>
+    <string name="search_login_cancel">Отмена</string>
 </resources>
