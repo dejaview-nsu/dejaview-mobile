@@ -1,0 +1,5 @@
+<resources>
+    <string name="demo_search_fixture">Демонстрационный поиск</string>
+    <string name="demo_search_movie">Демонстрационный фильм</string>
+    <string name="demo_search_result_count">Показать результаты (%1$d)</string>
+</resources>
