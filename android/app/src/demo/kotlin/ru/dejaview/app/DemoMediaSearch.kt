@@ -12,8 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
-import ru.dejaview.core.ui.components.ContentFeedback
-import ru.dejaview.core.ui.components.FeedbackKind
+import ru.dejaview.core.ui.components.SearchLoadingScreen
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
@@ -38,10 +37,10 @@ internal fun DemoMediaSearch(
         count = null
         onCompleted(SearchCompletion(requestId, mode, movies, input, Instant.now()))
     }
-    Column(modifier) {
-        if (count != null) {
-            ContentFeedback(FeedbackKind.Loading, onAction = { count = null })
-        } else {
+    if (count != null) {
+        SearchLoadingScreen(onCancel = { count = null }, modifier = modifier)
+    } else {
+        Column(modifier) {
             listOf(10, 1, 0).forEach { size ->
                 TextButton(onClick = { count = size }) {
                     Text(stringResource(R.string.demo_search_result_count, size))

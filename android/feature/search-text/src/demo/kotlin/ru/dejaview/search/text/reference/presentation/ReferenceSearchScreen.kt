@@ -24,6 +24,7 @@ import ru.dejaview.core.ui.components.DejaViewTextField
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.MovieCard
 import ru.dejaview.core.ui.components.PrimaryButton
+import ru.dejaview.core.ui.components.SearchLoadingScreen
 import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
@@ -37,6 +38,10 @@ internal fun ReferenceSearchScreen(
     onAction: (ReferenceSearchAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (state.status == SearchStatus.Loading) {
+        SearchLoadingScreen(onCancel = { onAction(ReferenceSearchAction.Cancel) }, modifier = modifier.imePadding())
+        return
+    }
     val keyboard = LocalSoftwareKeyboardController.current
     val focus = LocalFocusManager.current
     val submit = {
@@ -102,7 +107,6 @@ private fun DescriptionField(
                 style = MaterialTheme.typography.labelSmall,
             )
         },
-        enabled = state.status != SearchStatus.Loading,
         minLines = DESCRIPTION_LINES,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
     )
@@ -116,8 +120,7 @@ private fun SearchFeedback(
     val retry = { onAction(ReferenceSearchAction.Submit) }
     val edit = { onAction(ReferenceSearchAction.Cancel) }
     when (status) {
-        SearchStatus.Editing -> Unit
-        SearchStatus.Loading -> ContentFeedback(FeedbackKind.Loading, onAction = edit)
+        SearchStatus.Editing, SearchStatus.Loading -> Unit
         SearchStatus.Empty -> ContentFeedback(FeedbackKind.Empty, onAction = edit)
         SearchStatus.Offline -> ContentFeedback(FeedbackKind.Offline, onAction = retry)
         SearchStatus.Failed -> ContentFeedback(FeedbackKind.Error, onAction = retry)
