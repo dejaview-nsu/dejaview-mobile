@@ -11,7 +11,11 @@ import kotlinx.coroutines.launch
 import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
+import ru.dejaview.model.SearchCompletion
+import ru.dejaview.model.SearchMode
 import ru.dejaview.search.text.reference.domain.ReferenceSearch
+import java.time.Instant
+import java.util.UUID
 
 internal const val MIN_QUERY_LENGTH = 3
 internal const val MAX_QUERY_LENGTH = 250
@@ -66,10 +70,13 @@ internal class ReferenceSearchViewModel(
     val state = mutableState.asStateFlow()
     private var request: Job? = null
 
-    fun onAction(action: ReferenceSearchAction) {
+    fun onAction(
+        action: ReferenceSearchAction,
+        onCompleted: ((SearchCompletion) -> Unit)? = null,
+    ) {
         when (action) {
             is ReferenceSearchAction.Edit -> edit(action.query)
-            ReferenceSearchAction.Submit -> submit()
+            ReferenceSearchAction.Submit -> submit(onCompleted)
             ReferenceSearchAction.Cancel -> cancelSearch()
         }
     }
@@ -92,15 +99,21 @@ internal class ReferenceSearchViewModel(
         return query.substring(0, query.offsetByCodePoints(0, MAX_DRAFT_LENGTH))
     }
 
-    private fun submit() {
+    private fun submit(onCompleted: ((SearchCompletion) -> Unit)?) {
         val submitted = mutableState.value
         if (!submitted.canSubmit) return
         mutableState.value = submitted.copy(status = SearchStatus.Loading)
         request =
             viewModelScope.launch {
-                val result = search.search(submitted.query.trim())
+                val query = submitted.query.trim()
+                val result = search.search(query)
                 ensureActive()
-                mutableState.value = submitted.copy(status = result.toSearchStatus())
+                if (result is AppResult.Success && onCompleted != null) {
+                    mutableState.value = submitted
+                    onCompleted(SearchCompletion(UUID.randomUUID().toString(), SearchMode.TEXT, result.value, query, Instant.now()))
+                } else {
+                    mutableState.value = submitted.copy(status = result.toSearchStatus())
+                }
             }
     }
 

@@ -37,7 +37,7 @@ Dev 1 согласует `AppResult<T> = Success<T> | Failure(AppError)`; Dev 2 
 interface SessionReader {
     val state: StateFlow<SessionState>
 }
-// Initializing, Guest, Authenticated(username, expiresAt, accountScope)
+// Initializing, Guest, Expired, Authenticated(username, expiresAt, accountScope)
 interface SessionController {
     suspend fun restore(): AppResult<Unit>
     suspend fun logout(): AppResult<Unit>
@@ -47,6 +47,8 @@ interface SessionController {
 Fake допускает явно выбранное состояние и управляемое истечение срока. В prod восстановление начинается с Initializing, читает cookie и проверяет `/auth/session`; ошибка сети не должна ошибочно подтверждать действующую авторизацию. Cookie `dv_session` хранится с host/domain, path, secure и expires; не прикладывается к TMDB, сторонним картинкам или произвольным URL. Выход очищает локальную сессию даже при недоступном сервере и сообщает, если удалённый logout не подтверждён. Уже отправленные запросы старого session generation не могут восстановить cookie после выхода.
 
 `SessionInfo` 1.4.1 не содержит стабильного `user_id`. Для MVP локальный `accountScope` — случайный namespace **одного входа**. При logout/истечении истории этого namespace очищаются; после нового входа создаётся новый. При обычном перезапуске с действующей сессией namespace сохраняется. Это сознательное упрощение: история не переживает повторный вход. Для устойчивой истории нескольких аккаунтов нужен согласованный стабильный ID, нельзя использовать изменяемый username как надёжный ключ.
+
+В D1-03 приложение принимает опциональные Hilt-привязки `SessionReader` и `HistoryRepository`. Когда модули владельцев регистрируют интерфейсы, оболочка использует их автоматически. Dev 4 регистрирует `LoginUi` из `core/ui` вместе с `SessionReader`. Экран сообщает об отмене через callback и обновляет сессию при входе. После изменения сессии на `Authenticated` оболочка выполняет ожидающее действие.
 
 **Владелец возврата Dev 1.** Маршрут `LoginRoute(pendingActionId)` хранит только ID. `PendingActionStore` содержит типизированное действие: `OpenMode(mode, draftId?)`, `SetMembership(movieId, list, desiredValue)`, `SetRating(movieId, rating?)`. Возврат выполняет его ровно один раз; cancel входа удаляет ожидающее действие. Сохраняется желаемое значение, а не `toggle`, чтобы повтор не инвертировал результат. Пароли и cookie никогда не входят в route/SavedState.
 
@@ -127,7 +129,7 @@ interface PersonalMoviesRepository {
 
 ## История и профиль
 
-**Владелец Dev 3.** `HistoryRepository` в `core/contracts/history`: `record(completion, accountScope)`, `observe(scope)`, `clear(scope)`. `core/storage` реализует Room. `feature/history` показывает экран, профиль только открывает маршрут. История хранит режим, дату, текст или безопасное имя/метаданные файла, результат и requestId; оригинальные медиа не сохраняет. Успех/пусто записываются, сетевые ошибки и отмена — нет, пока не введена отдельная спецификация ошибок истории.
+**Владелец Dev 3.** `HistoryRepository` в `core/contracts/history`: `record(completion, accountScope)`, `observe(scope)`, `clear(scope)`. `core/storage` реализует Room. `feature/history` показывает экран, профиль только открывает маршрут. `null` в `accountScope` обозначает гостевую историю. `observe` отдаёт завершения поиска в пределах указанного scope, поэтому оболочка восстанавливает выдачу по `requestId`. История хранит режим, дату, текст или безопасное имя/метаданные файла, результат и requestId; оригинальные медиа не сохраняет. Успех/пусто записываются, сетевые ошибки и отмена — нет, пока не введена отдельная спецификация ошибок истории.
 
 Для гостя история первой версии временная, в памяти. Для вошедшего пользователя — Room в пределах session namespace. Очистка/выход удаляют локальную историю этого scope и незавершённые персональные действия. Нельзя смешать историю двух аккаунтов. Повтор текста подставляет текст в режим TEXT, но не отправляет автоматически. Для медиа первая версия предлагает выбрать файл снова.
 

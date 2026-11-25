@@ -25,6 +25,7 @@ class ReferenceSearchInsetsTest {
 
     @Test
     fun searchButtonStaysAboveImeAndSubmitsTheDemoResult() {
+        compose.onNodeWithText("Описание").performClick()
         val field = compose.onNodeWithContentDescription("Описание фильма")
         val submit = compose.onNodeWithText("Найти фильм")
         assertHeadingBelowSystemBars()

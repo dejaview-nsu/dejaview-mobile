@@ -1,0 +1,8 @@
+<resources>
+    <string name="search_results">Результаты поиска</string>
+    <string name="search_movie_found">Найден фильм</string>
+    <string name="search_result_unavailable">Выдача недоступна</string>
+    <string name="search_repeat_message">Запустите поиск ещё раз</string>
+    <string name="search_return">Вернуться к поиску</string>
+    <string name="search_wrong_movie">Это не тот фильм</string>
+</resources>
