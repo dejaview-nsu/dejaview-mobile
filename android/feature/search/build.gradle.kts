@@ -8,4 +8,5 @@ plugins {
 
 dependencies {
     implementation(project(":feature:search-api"))
+    implementation(libs.lifecycle.viewmodel.compose)
 }
