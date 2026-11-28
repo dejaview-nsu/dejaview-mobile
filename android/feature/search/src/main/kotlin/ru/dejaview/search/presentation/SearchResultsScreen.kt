@@ -9,12 +9,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
 import ru.dejaview.core.ui.components.ContentFeedback
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.MovieCard
+import ru.dejaview.core.ui.components.ScreenHeader
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.search.R
@@ -69,14 +70,26 @@ fun SearchResultsScreen(
                 item {
                     if (completion.mode == SearchMode.TEXT) {
                         val count = completion.results.size
-                        Text(pluralStringResource(R.plurals.search_match_count, count, count), style = DejaViewType.heading)
-                        Text(completion.inputSummary, maxLines = 2, overflow = TextOverflow.Ellipsis, style = DejaViewType.body)
+                        ScreenHeader(pluralStringResource(R.plurals.search_match_count, count, count), onReturn)
                     } else {
-                        Text(stringResource(R.string.search_movie_found), style = DejaViewType.heading)
+                        ScreenHeader(stringResource(R.string.search_movie_found), onReturn, close = true)
                     }
                 }
+                if (completion.mode == SearchMode.TEXT) {
+                    item { QuerySummary(completion.inputSummary, onReturn) }
+                }
                 itemsIndexed(completion.results) { index, movie ->
-                    MovieCard(movie, highlighted = index == 0, onClick = { onMovie(movie.movieId) })
+                    if (completion.mode == SearchMode.TEXT && index > 0) {
+                        TextResultRow(index + 1, movie, onClick = { onMovie(movie.movieId) })
+                    } else {
+                        val url = movie.posterUrl.httpsPoster()
+                        MovieCard(
+                            movie,
+                            highlighted = index == 0,
+                            onClick = { onMovie(movie.movieId) },
+                            poster = url?.let { { ResultPoster(it) } },
+                        )
+                    }
                 }
                 item {
                     TextButton(onClick = onReturn) {
@@ -86,4 +99,13 @@ fun SearchResultsScreen(
             }
         }
     }
+}
+
+@Composable
+internal fun QuerySummary(query: String, onEdit: () -> Unit) {
+    androidx.compose.material3.AssistChip(
+        onClick = onEdit,
+        label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        trailingIcon = { Text(stringResource(R.string.search_edit_query), style = DejaViewType.caption) },
+    )
 }
