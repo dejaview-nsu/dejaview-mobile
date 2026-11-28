@@ -30,8 +30,18 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             DejaViewTheme {
-                AppNavHost(searchModes = searchModes, searchServices = searchServices, controller = sessions.controller)
+                val preferences = getSharedPreferences(STARTUP_PREFERENCES, MODE_PRIVATE)
+                AppNavHost(
+                    searchModes = searchModes,
+                    searchServices = searchServices,
+                    controller = sessions.controller,
+                    showIntroduction = !preferences.getBoolean(INTRODUCTION_COMPLETED, false),
+                    onIntroductionCompleted = { preferences.edit().putBoolean(INTRODUCTION_COMPLETED, true).apply() },
+                )
             }
         }
     }
 }
+
+internal const val STARTUP_PREFERENCES = "app-startup"
+internal const val INTRODUCTION_COMPLETED = "introduction-completed"

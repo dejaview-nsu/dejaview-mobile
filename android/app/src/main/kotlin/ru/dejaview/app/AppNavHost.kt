@@ -26,6 +26,8 @@ import ru.dejaview.navigation.HistoryRoute
 import ru.dejaview.navigation.LibraryRoute
 import ru.dejaview.navigation.LoginRoute
 import ru.dejaview.navigation.MovieRoute
+import ru.dejaview.navigation.OnboardingRoute
+import ru.dejaview.navigation.OpeningRoute
 import ru.dejaview.navigation.ProfileRoute
 import ru.dejaview.navigation.ResultsRoute
 import ru.dejaview.navigation.SearchHomeRoute
@@ -38,6 +40,8 @@ internal fun AppNavHost(
     searchServices: SearchServices,
     controller: SessionController,
     navController: NavHostController = rememberNavController(),
+    showIntroduction: Boolean = false,
+    onIntroductionCompleted: () -> Unit = {},
 ) {
     val actions = viewModel<SessionActions> { SessionActions(controller) }
     val notice by actions.notice.collectAsStateWithLifecycle()
@@ -56,7 +60,24 @@ internal fun AppNavHost(
                 Text(stringResource(it))
                 TextButton(onClick = actions::dismiss) { Text(stringResource(R.string.notice_close)) }
             }
-            NavHost(navController = navController, startDestination = SearchHomeRoute) {
+            val startDestination = if (showIntroduction) OpeningRoute else SearchHomeRoute
+            NavHost(navController = navController, startDestination = startDestination) {
+                composable<OpeningRoute> { entry ->
+                    OpeningSplash {
+                        if (navController.currentBackStackEntry == entry) {
+                            navController.navigate(OnboardingRoute) { popUpTo<OpeningRoute> { inclusive = true } }
+                        }
+                    }
+                }
+                composable<OnboardingRoute> { entry ->
+                    OnboardingScreen {
+                        if (navController.isActive(entry)) {
+                            onIntroductionCompleted()
+                            navController.navigate(SearchHomeRoute) { popUpTo<OnboardingRoute> { inclusive = true } }
+                            navController.navigate(LoginRoute())
+                        }
+                    }
+                }
                 composable<SearchHomeRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
                     val session by vm.session.collectAsStateWithLifecycle()

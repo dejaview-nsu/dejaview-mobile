@@ -40,3 +40,9 @@ data object HistoryRoute
 
 @Serializable
 data object SearchHomeRoute
+
+@Serializable
+data object OpeningRoute
+
+@Serializable
+data object OnboardingRoute
