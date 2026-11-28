@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import ru.dejaview.core.ui.components.DejaViewTextField
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.PrimaryButton
@@ -67,7 +68,18 @@ internal fun TextSearchScreen(
         ) {
             SearchHeading(onBack)
             DescriptionField(state, onValueChange = { onAction(TextSearchAction.Edit(it)) })
+            DescriptionHints { hint ->
+                val prefix = state.query.trimEnd().takeIf(String::isNotEmpty)?.plus(" ") ?: ""
+                onAction(TextSearchAction.Edit(prefix + hint + " "))
+            }
         }
+        Text(
+            stringResource(R.string.text_search_guest_hint),
+            Modifier.fillMaxWidth(),
+            color = DejaViewColors.mutedText,
+            style = DejaViewType.caption,
+            textAlign = TextAlign.Center,
+        )
         PrimaryButton(
             text = stringResource(R.string.text_search_submit),
             onClick = submit,
