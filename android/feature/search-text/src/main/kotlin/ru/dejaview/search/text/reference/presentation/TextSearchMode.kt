@@ -1,6 +1,7 @@
 package ru.dejaview.search.text.reference.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -45,6 +46,7 @@ internal class TextSearchMode
             val model = viewModel { ReferenceSearchViewModel(search, createSavedStateHandle()) }
             val state by model.state.collectAsStateWithLifecycle()
             val callback by rememberUpdatedState(onCompleted)
+            val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
             val cancel = { model.onAction(ReferenceSearchAction.Cancel) }
             BackHandler(enabled = state.status == SearchStatus.Loading, onBack = cancel)
             LifecycleResumeEffect(model) {
@@ -52,6 +54,11 @@ internal class TextSearchMode
                     if (model.state.value.status == SearchStatus.Loading) cancel()
                 }
             }
-            ReferenceSearchScreen(state, { action -> model.onAction(action) { callback(it) } }, modifier)
+            ReferenceSearchScreen(
+                state,
+                onAction = { action -> model.onAction(action) { callback(it) } },
+                onBack = { backDispatcher?.onBackPressed() },
+                modifier = modifier,
+            )
         }
     }

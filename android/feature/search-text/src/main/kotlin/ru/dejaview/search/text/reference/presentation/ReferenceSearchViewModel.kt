@@ -43,6 +43,10 @@ internal sealed interface SearchStatus {
 
     data object Failed : SearchStatus
 
+    data class RateLimited(
+        val retryAfterSeconds: Long?,
+    ) : SearchStatus
+
     data class Results(
         val movies: List<MovieSummary>,
     ) : SearchStatus
@@ -110,6 +114,11 @@ internal class ReferenceSearchViewModel(
     private fun AppResult<List<MovieSummary>>.toSearchStatus(): SearchStatus =
         when (this) {
             is AppResult.Success -> if (value.isEmpty()) SearchStatus.Empty else SearchStatus.Results(value)
-            is AppResult.Failure -> if (error is AppError.Offline) SearchStatus.Offline else SearchStatus.Failed
+            is AppResult.Failure ->
+                when (val cause = error) {
+                    is AppError.Offline -> SearchStatus.Offline
+                    is AppError.RateLimit -> SearchStatus.RateLimited(cause.retryAfterSeconds)
+                    else -> SearchStatus.Failed
+                }
         }
 }
