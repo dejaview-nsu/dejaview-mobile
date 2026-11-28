@@ -71,12 +71,14 @@ internal fun AppNavHost(
                     }
                 }
                 composable<OnboardingRoute> { entry ->
-                    OnboardingScreen {
+                    val continueToAccount: (Boolean) -> Unit = { register ->
                         if (navController.isActive(entry)) {
                             navController.navigate(SearchHomeRoute) { popUpTo<OnboardingRoute> { inclusive = true } }
                             navController.navigate(LoginRoute())
+                            if (register && searchServices.login != null) navController.navigate(RegistrationRoute)
                         }
                     }
+                    OnboardingScreen(onLogin = { continueToAccount(false) }, onRegister = { continueToAccount(true) })
                 }
                 composable<SearchHomeRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)

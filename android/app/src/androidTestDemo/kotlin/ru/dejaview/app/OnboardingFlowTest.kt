@@ -26,7 +26,7 @@ class OnboardingFlowTest {
         try {
             ActivityScenario.launch(MainActivity::class.java).use {
                 awaitText("Видели кусочек фильма? Найдём целиком")
-                compose.onNodeWithText("Войти или создать аккаунт").performScrollTo().performClick()
+                compose.onNodeWithText("Войти").performScrollTo().performClick()
                 awaitText("С возвращением")
                 compose.onNodeWithText("Создать аккаунт").performScrollTo().performClick()
                 compose.onNodeWithText("Регистрация").assertIsDisplayed()

@@ -14,7 +14,6 @@
     <string name="onboarding_image_mode">Кадр</string>
     <string name="onboarding_video_mode">Видео</string>
     <string name="onboarding_audio_mode">Звук</string>
-    <string name="onboarding_continue">Войти или создать аккаунт</string>
     <string name="onboarding_guest_hint">По описанию можно искать без регистрации. Для кадра, видео, звука и списков нужен аккаунт.</string>
     <string name="onboarding_fragment">Нарезка из ленты</string>
     <string name="onboarding_film">Она · 2013</string>

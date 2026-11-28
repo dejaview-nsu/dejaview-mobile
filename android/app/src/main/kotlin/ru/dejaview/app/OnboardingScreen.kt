@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ru.dejaview.core.ui.components.PrimaryButton
+import ru.dejaview.core.ui.components.SecondaryButton
 import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewSpacing
@@ -33,12 +35,13 @@ import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.core.ui.R as UiR
 
 @Composable
-internal fun OnboardingScreen(onContinue: () -> Unit) {
+internal fun OnboardingScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(vertical = DejaViewSpacing.extraLarge),
             verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
         ) {
+            Spacer(Modifier.height(DejaViewSpacing.doubleLarge))
             OnboardingArtwork()
             Text(stringResource(R.string.onboarding_title), style = DejaViewType.headline)
             Text(stringResource(R.string.onboarding_body), style = DejaViewType.body, color = DejaViewColors.secondaryText)
@@ -49,7 +52,8 @@ internal fun OnboardingScreen(onContinue: () -> Unit) {
                 OnboardingMode(UiR.drawable.dv_search_audio, R.string.onboarding_audio_mode)
             }
             Spacer(Modifier.weight(1f))
-            PrimaryButton(stringResource(R.string.onboarding_continue), onContinue, Modifier.fillMaxWidth())
+            PrimaryButton(stringResource(R.string.search_login), onLogin, Modifier.fillMaxWidth())
+            SecondaryButton(stringResource(R.string.search_access_register), onRegister, Modifier.fillMaxWidth())
             Text(
                 stringResource(R.string.onboarding_guest_hint),
                 Modifier.fillMaxWidth(),
