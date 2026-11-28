@@ -1,5 +1,6 @@
 package ru.dejaview.core.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,11 +20,17 @@ fun SearchStatusPage(
     message: String = stringResource(kind.message),
     primary: String = stringResource(kind.action),
     secondary: String = stringResource(R.string.dv_search_home),
+    intro: (@Composable () -> Unit)? = null,
     details: (@Composable () -> Unit)? = null,
 ) {
     ScreenLayout(
         modifier,
-        header = { ScreenHeader(header, onBack, close = kind != FeedbackKind.Empty) },
+        header = {
+            Column {
+                ScreenHeader(header, onBack, close = kind != FeedbackKind.Empty)
+                intro?.invoke()
+            }
+        },
         actions = {
             PrimaryButton(primary, onPrimary, Modifier.fillMaxWidth(), enabled = primaryEnabled)
             SecondaryButton(secondary, onSecondary, Modifier.fillMaxWidth())
