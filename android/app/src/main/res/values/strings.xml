@@ -1,4 +1,12 @@
 <resources>
+    <string name="onboarding_title">Видели кусочек фильма? Найдём целиком</string>
+    <string name="onboarding_body">Нарезка из ленты, скриншот, мелодия или пересказ друга — отправьте то, что осталось в памяти.</string>
+    <string name="onboarding_text_mode">Описание</string>
+    <string name="onboarding_image_mode">Кадр</string>
+    <string name="onboarding_video_mode">Видео</string>
+    <string name="onboarding_audio_mode">Звук</string>
+    <string name="onboarding_continue">Войти или создать аккаунт</string>
+    <string name="onboarding_guest_hint">По описанию можно искать без регистрации. Для кадра, видео, звука и списков нужен аккаунт.</string>
     <string name="onboarding_fragment">Нарезка из ленты</string>
     <string name="onboarding_film">Она · 2013</string>
     <string name="splash_tagline">Найди фильм по обрывку памяти</string>
