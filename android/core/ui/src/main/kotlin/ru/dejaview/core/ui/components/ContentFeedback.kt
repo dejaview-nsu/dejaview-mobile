@@ -44,6 +44,7 @@ enum class FeedbackKind(
     Error(R.string.dv_error, R.string.dv_error_message, R.string.dv_retry, R.drawable.dv_state_error),
     Offline(R.string.dv_offline, R.string.dv_offline_message, R.string.dv_retry, R.drawable.dv_state_offline),
     InvalidFile(R.string.dv_file_error, R.string.dv_file_error_message, R.string.dv_choose_file, R.drawable.dv_state_error),
+    Microphone(R.string.dv_microphone, R.string.dv_microphone_message, R.string.dv_settings, R.drawable.dv_state_microphone),
 }
 
 @Composable
@@ -95,7 +96,7 @@ private fun FeedbackIllustration(kind: FeedbackKind) {
         return
     }
 
-    val tint = if (kind == FeedbackKind.InvalidFile) DejaViewColors.error else DejaViewColors.accent
+    val tint = if (kind == FeedbackKind.InvalidFile || kind == FeedbackKind.Microphone) DejaViewColors.error else DejaViewColors.accent
     Surface(
         modifier = Modifier.size(FEEDBACK_BADGE_SIZE),
         shape = DejaViewShapes.pill,
