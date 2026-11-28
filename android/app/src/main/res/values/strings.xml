@@ -1,17 +1,24 @@
 <resources>
-    <string name="open_audio">Аудиопоиск</string>
-    <string name="open_login">Войти</string>
     <string name="logout">Выйти</string>
-    <string name="audio_requires_login">Чтобы искать по аудио, войдите в аккаунт.</string>
-    <string name="audio_empty">Совпадений не найдено</string>
     <string name="logout_unconfirmed">Вы вышли на устройстве. Сервер не подтвердил завершение сессии.</string>
     <string name="notice_close">Закрыть</string>
     <string name="app_name" translatable="false">DejaView</string>
-    <string name="search_placeholder">Поиск фильмов</string>
-    <string name="results_placeholder">Результаты поиска</string>
+    <string name="search_mode_unavailable">Этот режим поиска пока недоступен</string>
     <string name="movie_placeholder">Карточка фильма</string>
-    <string name="login_placeholder">Вход</string>
     <string name="library_placeholder">Библиотека</string>
     <string name="profile_placeholder">Профиль</string>
     <string name="history_placeholder">История</string>
+    <string name="search_login_required">Нужен вход</string>
+    <string name="search_login_unavailable">Вход пока недоступен</string>
+    <string name="search_login_message">Войдите, чтобы искать по кадру, видео или звуку.</string>
+    <string name="search_demo_login">Войти в деморежиме</string>
+    <string name="search_login_cancel">Отмена</string>
+    <string name="search_session_loading">Проверяем сессию</string>
+    <string name="search_home_heading">Найди фильм по обрывку памяти</string>
+    <string name="search_login">Войти</string>
+    <string name="search_text_guest">Можно без входа</string>
+    <string name="search_text_hint">Опишите сцену или сюжет</string>
+    <string name="search_image_hint">Скриншот или фото экрана</string>
+    <string name="search_video_hint">Фрагмент до 30 секунд</string>
+    <string name="search_audio_hint">Саундтрек или реплика, 10 секунд</string>
 </resources>

@@ -51,8 +51,6 @@ hilt {
 dependencies {
     implementation(project(":core:contracts"))
     implementation(project(":core:media"))
-    implementation(libs.lifecycle.runtime.compose)
-    implementation(libs.lifecycle.viewmodel.compose)
     implementation(project(":core:model"))
     implementation(project(":core:navigation"))
     implementation(project(":core:ui"))
@@ -72,6 +70,8 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.material3)
     implementation(libs.hilt.android)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
     ksp(libs.hilt.compiler)
 

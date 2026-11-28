@@ -29,7 +29,7 @@ class RecordingLimitSmoke {
             .grantRuntimePermission(activity.packageName, Manifest.permission.RECORD_AUDIO)
         try {
             assertEquals(LoginResult.Success, runBlocking { sessions.login.login("viewer", "x", null) })
-            compose.onNodeWithText("Аудиопоиск").performClick()
+            compose.onNodeWithText("Звук").performClick()
             compose.onNodeWithText("Записать звук").performClick()
             compose.onNodeWithText("Завершить запись").assertIsDisplayed()
             compose.waitUntil(16_000) { compose.onAllNodes(hasText("Прослушать")).fetchSemanticsNodes().isNotEmpty() }

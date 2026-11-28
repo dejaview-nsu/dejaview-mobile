@@ -4,11 +4,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import ru.dejaview.core.ui.theme.DejaViewTheme
@@ -20,6 +23,7 @@ import ru.dejaview.navigation.LoginRoute
 import ru.dejaview.navigation.MovieRoute
 import ru.dejaview.navigation.ProfileRoute
 import ru.dejaview.navigation.ResultsRoute
+import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
 
 class AppNavHostTest {
@@ -27,6 +31,14 @@ class AppNavHostTest {
     val compose = createAndroidComposeRule<MainActivity>()
 
     private lateinit var navController: TestNavHostController
+
+    @Before
+    fun beginWithoutAnActiveSession() {
+        runBlocking {
+            compose.activity.sessions.controller
+                .logout()
+        }
+    }
 
     @Test
     fun launchesSearchWithBadgeOnlyInDemo() {
@@ -37,7 +49,6 @@ class AppNavHostTest {
         } else {
             badge.assertDoesNotExist()
         }
-        assertEquals(setOf(SearchMode.AUDIO), compose.activity.searchModes.keys)
     }
 
     @Test
@@ -49,16 +60,21 @@ class AppNavHostTest {
                 }
             compose.activity.setContent {
                 DejaViewTheme {
-                    AppNavHost(searchModes = emptyMap(), services = compose.activity.sessions, navController = navController)
+                    AppNavHost(
+                        searchModes = emptyMap(),
+                        searchServices = compose.activity.searchServices,
+                        controller = compose.activity.sessions.controller,
+                        navController = navController,
+                    )
                 }
             }
         }
         assertStartScreen()
-        compose.runOnIdle { assertEquals(SearchRoute(SearchMode.TEXT), navController.currentBackStackEntry?.toRoute<SearchRoute>()) }
-        navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_placeholder)
-        navigateTo(ResultsRoute("request/?#Ю"), R.string.results_placeholder)
+        compose.runOnIdle { assertEquals(SearchHomeRoute, navController.currentBackStackEntry?.toRoute<SearchHomeRoute>()) }
+        navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_login_required)
+        navigateTo(ResultsRoute("request/?#Ю"), ru.dejaview.feature.search.R.string.search_result_unavailable)
         navigateTo(MovieRoute(Long.MAX_VALUE), R.string.movie_placeholder)
-        navigateTo(LoginRoute("action/?#Ю"), R.string.login_placeholder)
+        navigateTo(LoginRoute("action/?#Ю"), ru.dejaview.feature.auth.R.string.auth_title)
         navigateTo(LibraryRoute(MovieList.WATCHED), R.string.library_placeholder)
         navigateTo(ProfileRoute, R.string.profile_placeholder)
         navigateTo(HistoryRoute, R.string.history_placeholder)
@@ -82,11 +98,17 @@ class AppNavHostTest {
         compose.runOnIdle { assertEquals(route, navController.currentBackStackEntry?.toRoute<T>()) }
     }
 
+    @Test
+    fun cancellingProtectedModeLoginReturnsToTheModePicker() {
+        compose.onNodeWithText("Кадр").performClick()
+        assertScreen(ru.dejaview.feature.auth.R.string.auth_title)
+        compose.onNodeWithText("Отмена").performClick()
+        assertStartScreen()
+    }
+
     private fun assertStartScreen() {
-        if (compose.activity.packageName.endsWith(".demo")) {
-            compose.onNodeWithText("Поиск по описанию").assertIsDisplayed()
-        } else {
-            assertScreen(R.string.search_placeholder)
+        listOf("Описание", "Кадр", "Видео", "Звук").forEach { mode ->
+            compose.onNodeWithText(mode).assertIsDisplayed()
         }
     }
 

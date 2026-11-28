@@ -37,3 +37,6 @@ data object ProfileRoute
 
 @Serializable
 data object HistoryRoute
+
+@Serializable
+data object SearchHomeRoute

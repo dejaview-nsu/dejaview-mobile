@@ -22,10 +22,10 @@ class AudioLoginTest {
     }
 
     @Test fun cancelThenLoginReturnsToAudioAndLogoutClearsAccess() {
-        click("Аудиопоиск")
+        click("Звук")
         click("Отмена")
-        compose.onNodeWithText("Поиск по описанию").assertIsDisplayed()
-        click("Аудиопоиск")
+        compose.onNodeWithText("Описание").assertIsDisplayed()
+        click("Звук")
         compose.onNodeWithContentDescription("Имя пользователя или email").performTextInput("viewer")
         compose.onNodeWithContentDescription("Пароль").performTextInput("x")
         click("Войти")
@@ -42,7 +42,7 @@ class AudioLoginTest {
         click("Профиль")
         compose.onNodeWithText("viewer").assertIsDisplayed()
         click("Выйти")
-        click("Аудиопоиск")
+        click("Звук")
         compose.onNodeWithText("Вход").assertIsDisplayed()
     }
 

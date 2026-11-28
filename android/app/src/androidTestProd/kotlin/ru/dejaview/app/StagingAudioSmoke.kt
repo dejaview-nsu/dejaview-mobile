@@ -86,19 +86,19 @@ class StagingAudioSmoke {
                 compose.runOnUiThread {
                     activity.setContent {
                         CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
-                            DejaViewTheme { AppNavHost(activity.searchModes, sessions) }
+                            DejaViewTheme { AppNavHost(activity.searchModes, activity.searchServices, sessions.controller) }
                         }
                     }
                 }
-                compose.onNodeWithText("Аудиопоиск").performClick()
+                compose.onNodeWithText("Звук").performClick()
                 compose.onNodeWithText("Выбрать файл").performClick()
                 compose.waitUntil(5000) { exists("Прослушать") }
                 compose.onNodeWithText("Найти фильм").performClick()
                 compose.waitUntil(100_000) {
-                    exists("Результаты поиска") || exists("Сервис поиска временно недоступен.") ||
+                    exists("Ничего не нашли") || exists("Найден фильм") || exists("Сервис поиска временно недоступен.") ||
                         exists("Не удалось завершить поиск. Попробуйте ещё раз.") || exists("Файл недоступен или повреждён.")
                 }
-                compose.onNodeWithText("Результаты поиска").assertIsDisplayed()
+                compose.onNodeWithText(if (exists("Найден фильм")) "Найден фильм" else "Ничего не нашли").assertIsDisplayed()
             } finally {
                 resolver.delete(uri, null, null)
             }

@@ -61,6 +61,20 @@ class AudioUploadTest {
         server.shutdown()
     }
 
+    @Test fun sendsWavWithTheContractMimeType() =
+        runBlocking {
+            server.enqueue(MockResponse().setBody("""{"results":[]}"""))
+            val wav = PreparedMedia("draft", "audio/wav", payload.size.toLong(), 1000, "audio.wav")
+            assertTrue(adapter.search(wav) {} is AppResult.Success)
+            assertTrue(
+                server
+                    .takeRequest()
+                    .body
+                    .readUtf8()
+                    .contains("Content-Type: audio/wav\r\n"),
+            )
+        }
+
     @Test fun postsOneFileAndReportsPayloadBytes() =
         runBlocking {
             server.enqueue(MockResponse().setBody("""{"results":[]}"""))

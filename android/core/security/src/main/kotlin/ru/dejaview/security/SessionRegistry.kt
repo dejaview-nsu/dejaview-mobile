@@ -97,7 +97,7 @@ class SessionRegistry(
         val checked = StoredSession(saved.cookie, saved.origin, saved.accountScope, expires)
         vault.write(checked)
         active = checked
-        mutable.value = SessionState.Authenticated(username, avatar, hasPassword, expires, checked.accountScope)
+        mutable.value = SessionState.Authenticated(username, expires, checked.accountScope, avatar, hasPassword)
         expiryJob?.cancel()
         expiryJob =
             scope.launch {

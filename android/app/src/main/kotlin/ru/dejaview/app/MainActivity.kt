@@ -17,6 +17,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var searchModes: Map<SearchMode, @JvmSuppressWildcards SearchModalityUi>
 
+    @Inject
+    lateinit var searchServices: SearchServices
+
     @Inject lateinit var sessions: SessionServices
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +30,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             DejaViewTheme {
-                AppNavHost(searchModes = searchModes, services = sessions)
+                AppNavHost(searchModes = searchModes, searchServices = searchServices, controller = sessions.controller)
             }
         }
     }

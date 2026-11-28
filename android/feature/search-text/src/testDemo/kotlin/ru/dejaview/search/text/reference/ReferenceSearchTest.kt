@@ -18,6 +18,8 @@ import org.junit.Test
 import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
+import ru.dejaview.model.SearchCompletion
+import ru.dejaview.model.SearchMode
 import ru.dejaview.search.text.reference.data.FakeReferenceSearch
 import ru.dejaview.search.text.reference.presentation.ReferenceSearchAction
 import ru.dejaview.search.text.reference.presentation.ReferenceSearchViewModel
@@ -73,6 +75,27 @@ class ReferenceSearchTest {
             vm.submit()
             advanceUntilIdle()
             assertEquals(SearchStatus.Empty, vm.state.value.status)
+        }
+
+    @Test
+    fun publishesSuccessfulAndEmptySearchesToTheShellWithTheDraftIntact() =
+        runTest {
+            val vm = ReferenceSearchViewModel(FakeReferenceSearch(), SavedStateHandle())
+            val delivered = mutableListOf<SearchCompletion>()
+
+            vm.edit("  космос  ")
+            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            advanceUntilIdle()
+            assertEquals(SearchStatus.Editing, vm.state.value.status)
+            assertEquals("  космос  ", vm.state.value.query)
+
+            vm.edit("несуществующий сюжет")
+            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 0), delivered.map { it.results.size })
+            assertEquals(SearchMode.TEXT, delivered.first().mode)
+            assertEquals("космос", delivered.first().inputSummary)
+            assertEquals(2, delivered.map { it.requestId }.distinct().size)
         }
 
     @Test

@@ -13,7 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +35,6 @@ import ru.dejaview.feature.auth.R
 @Composable
 fun LoginScreen(
     service: LoginService,
-    onSuccess: () -> Unit,
     onCancel: () -> Unit,
 ) {
     val model = viewModel<LoginViewModel> { LoginViewModel(service) }
@@ -50,7 +48,6 @@ fun LoginScreen(
         onCancel()
     }
     BackHandler(onBack = cancel)
-    LaunchedEffect(state.complete) { if (state.complete) onSuccess() }
     Column(
         Modifier.imePadding().verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
         verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),

@@ -90,7 +90,7 @@ class AudioDraftStore(
                     val mime =
                         when (reader.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)) {
                             "audio/mpeg" -> "audio/mpeg"
-                            "audio/x-wav", "audio/wav" -> "audio/x-wav"
+                            "audio/x-wav", "audio/wav" -> "audio/wav"
                             "application/ogg", "audio/ogg" -> "audio/ogg"
                             "audio/mp4", "audio/x-m4a", "video/mp4" -> "audio/mp4"
                             else -> return invalid("UNSUPPORTED_FORMAT")
@@ -103,7 +103,7 @@ class AudioDraftStore(
             val ext =
                 when (mime) {
                     "audio/mpeg" -> "mp3"
-                    "audio/x-wav" -> "wav"
+                    "audio/wav" -> "wav"
                     "audio/ogg" -> "ogg"
                     else -> "m4a"
                 }

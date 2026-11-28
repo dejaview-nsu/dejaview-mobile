@@ -1,29 +1,7 @@
 package ru.dejaview.contracts.session
 
-import kotlinx.coroutines.flow.StateFlow
 import ru.dejaview.contracts.AppResult
 import java.net.URI
-import java.time.Instant
-
-sealed interface SessionState {
-    data object Initializing : SessionState
-
-    data object Guest : SessionState
-
-    data object Expired : SessionState
-
-    data class Authenticated(
-        val username: String,
-        val avatarUrl: String?,
-        val hasPassword: Boolean,
-        val expiresAt: Instant,
-        val accountScope: String,
-    ) : SessionState
-}
-
-interface SessionReader {
-    val state: StateFlow<SessionState>
-}
 
 interface SessionController {
     suspend fun restore(): AppResult<Unit>

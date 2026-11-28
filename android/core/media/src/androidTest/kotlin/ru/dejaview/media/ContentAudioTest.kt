@@ -71,7 +71,7 @@ class ContentAudioTest {
                 }
                 val result = store.importDocument(uri) as AppResult.Success
                 assertEquals(1000L, result.value.durationMs)
-                assertEquals("audio/x-wav", result.value.mimeType)
+                assertEquals("audio/wav", result.value.mimeType)
                 val copy = store.file(result.value.id)
                 assertEquals(16044L, copy.length())
                 store.release(result.value.id)
