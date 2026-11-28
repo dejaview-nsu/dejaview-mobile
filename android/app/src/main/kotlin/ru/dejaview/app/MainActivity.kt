@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.saveable.rememberSaveable
 import dagger.hilt.android.AndroidEntryPoint
 import ru.dejaview.core.ui.theme.DejaViewTheme
 import ru.dejaview.model.SearchMode
@@ -28,14 +29,15 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        val preferences = getSharedPreferences(STARTUP_PREFERENCES, MODE_PRIVATE)
         setContent {
             DejaViewTheme {
-                val preferences = getSharedPreferences(STARTUP_PREFERENCES, MODE_PRIVATE)
+                val showIntroduction = rememberSaveable { !preferences.getBoolean(INTRODUCTION_COMPLETED, false) }
                 AppNavHost(
                     searchModes = searchModes,
                     searchServices = searchServices,
                     controller = sessions.controller,
-                    showIntroduction = !preferences.getBoolean(INTRODUCTION_COMPLETED, false),
+                    showIntroduction = showIntroduction,
                     onIntroductionCompleted = { preferences.edit().putBoolean(INTRODUCTION_COMPLETED, true).apply() },
                 )
             }
