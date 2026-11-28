@@ -61,12 +61,12 @@ internal fun AppNavHost(
                 Text(stringResource(it))
                 TextButton(onClick = actions::dismiss) { Text(stringResource(R.string.notice_close)) }
             }
-            val startDestination = if (showIntroduction) OpeningRoute else SearchHomeRoute
-            NavHost(navController = navController, startDestination = startDestination) {
+            NavHost(navController = navController, startDestination = OpeningRoute) {
                 composable<OpeningRoute> { entry ->
                     OpeningSplash {
                         if (navController.currentBackStackEntry == entry) {
-                            navController.navigate(OnboardingRoute) { popUpTo<OpeningRoute> { inclusive = true } }
+                            val destination = if (showIntroduction) OnboardingRoute else SearchHomeRoute
+                            navController.navigate(destination) { popUpTo<OpeningRoute> { inclusive = true } }
                         }
                     }
                 }

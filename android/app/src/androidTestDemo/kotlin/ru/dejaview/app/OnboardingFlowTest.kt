@@ -19,7 +19,7 @@ class OnboardingFlowTest {
     @get:Rule val compose = createEmptyComposeRule()
 
     @Test
-    fun firstLaunchOpensOnboardingAndAuthThenLaterLaunchOpensHome() {
+    fun firstLaunchOpensOnboardingAndAuthThenLaterLaunchOpensHomeAfterSplash() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val preferences = context.getSharedPreferences(STARTUP_PREFERENCES, Context.MODE_PRIVATE)
         preferences.edit().remove(INTRODUCTION_STARTED).commit()
@@ -43,12 +43,17 @@ class OnboardingFlowTest {
                 awaitText("Проверьте почту")
                 assertTrue(preferences.getBoolean(INTRODUCTION_STARTED, false))
             }
+            compose.mainClock.autoAdvance = false
             ActivityScenario.launch(MainActivity::class.java).use {
+                compose.onNodeWithText(context.getString(R.string.splash_credit)).assertIsDisplayed()
+                compose.onNodeWithText("Найди фильм по обрывку памяти").assertDoesNotExist()
+                compose.mainClock.autoAdvance = true
                 awaitText("Найди фильм по обрывку памяти")
                 compose.onNodeWithText("Описание").assertIsDisplayed()
                 compose.onNodeWithText("Видели кусочек фильма? Найдём целиком").assertDoesNotExist()
             }
         } finally {
+            compose.mainClock.autoAdvance = true
             preferences.edit().putBoolean(INTRODUCTION_STARTED, true).commit()
         }
     }
