@@ -34,8 +34,12 @@ internal object BackendModule {
     @Provides
     fun registration(): RegistrationService =
         object : RegistrationService {
-            override suspend fun register(username: String, email: String, birthYear: Int, password: String): AppResult<Int> =
-                AppResult.Success(60)
+            override suspend fun register(
+                username: String,
+                email: String,
+                birthYear: Int,
+                password: String,
+            ): AppResult<Int> = AppResult.Success(60)
 
             override suspend fun resend(email: String): AppResult<Int> = AppResult.Success(60)
         }

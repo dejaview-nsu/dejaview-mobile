@@ -12,26 +12,33 @@ import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.network.BackendClient
 
-internal class HttpRegistrationService(private val client: BackendClient) : RegistrationService {
+internal class HttpRegistrationService(
+    private val client: BackendClient,
+) : RegistrationService {
     override suspend fun register(
         username: String,
         email: String,
         birthYear: Int,
         password: String,
     ): AppResult<Int> {
-        val form = buildJsonObject {
-            put("username", username)
-            put("email", email)
-            put("birth_year", birthYear)
-            put("password", password)
-        }
+        val form =
+            buildJsonObject {
+                put("username", username)
+                put("email", email)
+                put("birth_year", birthYear)
+                put("password", password)
+            }
         return submit("auth/register", form, 201)
     }
 
     override suspend fun resend(email: String): AppResult<Int> =
         submit("auth/resend-confirmation", buildJsonObject { put("login", email) }, 202)
 
-    private suspend fun submit(path: String, form: JsonObject, status: Int): AppResult<Int> {
+    private suspend fun submit(
+        path: String,
+        form: JsonObject,
+        status: Int,
+    ): AppResult<Int> {
         val response = client.send(path, form.toString().toRequestBody("application/json".toMediaType()))
         response.error?.let { return AppResult.Failure(it) }
         val seconds = (response.body?.get("resend_after") as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull

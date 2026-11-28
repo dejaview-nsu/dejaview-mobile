@@ -27,10 +27,16 @@ internal object AuthModule {
         gateway: SessionGateway,
     ): SessionRepository = SessionRepository(registry, gateway, backendOrigin)
 
-    @Provides fun loginUi(service: LoginService, registration: RegistrationService): LoginUi =
+    @Provides fun loginUi(
+        service: LoginService,
+        registration: RegistrationService,
+    ): LoginUi =
         object : LoginUi {
             @Composable
-            override fun Content(onCancel: () -> Unit, onRegister: () -> Unit) {
+            override fun Content(
+                onCancel: () -> Unit,
+                onRegister: () -> Unit,
+            ) {
                 LoginScreen(service, onCancel, onRegister)
             }
 
