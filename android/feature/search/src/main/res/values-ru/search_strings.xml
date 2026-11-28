@@ -1,0 +1,8 @@
+<resources>
+    <plurals name="search_match_count">
+        <item quantity="one">%d вариант</item>
+        <item quantity="few">%d варианта</item>
+        <item quantity="many">%d вариантов</item>
+        <item quantity="other">%d варианта</item>
+    </plurals>
+</resources>
