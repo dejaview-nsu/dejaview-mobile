@@ -1,4 +1,10 @@
 <resources>
+    <string name="search_access_image">Поиск по кадру доступен после входа</string>
+    <string name="search_access_video">Поиск по видео доступен после входа</string>
+    <string name="search_access_audio">Поиск по звуку доступен после входа</string>
+    <string name="search_access_detail">Войдите или создайте аккаунт, чтобы продолжить поиск.</string>
+    <string name="search_access_guest">Описать словами без входа</string>
+    <string name="search_access_register">Создать аккаунт</string>
     <string name="search_mode_sign_in_badge">Вход</string>
     <string name="onboarding_title">Видели кусочек фильма? Найдём целиком</string>
     <string name="onboarding_body">Нарезка из ленты, скриншот, мелодия или пересказ друга — отправьте то, что осталось в памяти.</string>
