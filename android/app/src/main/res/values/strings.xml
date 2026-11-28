@@ -1,4 +1,6 @@
 <resources>
+    <string name="splash_tagline">Найди фильм по обрывку памяти</string>
+    <string name="splash_credit">Данные о фильмах — TMDB</string>
     <string name="logout">Выйти</string>
     <string name="logout_unconfirmed">Вы вышли на устройстве. Сервер не подтвердил завершение сессии.</string>
     <string name="notice_close">Закрыть</string>
