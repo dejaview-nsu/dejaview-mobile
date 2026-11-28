@@ -33,8 +33,12 @@ internal fun AudioFailureScreen(
         modifier = modifier,
         primaryEnabled = state.retryInSeconds == 0L,
         primary = stringResource(if (replaceFile) R.string.audio_pick else R.string.audio_retry),
-        message = if (state.retryInSeconds > 0) stringResource(R.string.audio_retry_after, state.retryInSeconds)
-            else stringResource(audioErrorMessage(error)),
+        message =
+            if (state.retryInSeconds > 0) {
+                stringResource(R.string.audio_retry_after, state.retryInSeconds)
+            } else {
+                stringResource(audioErrorMessage(error))
+            },
     )
 }
 

@@ -28,7 +28,12 @@ import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.searchaudio.R
 
 @Composable
-internal fun AudioEntryScreen(onRecord: () -> Unit, onPick: () -> Unit, onClose: () -> Unit, modifier: Modifier) {
+internal fun AudioEntryScreen(
+    onRecord: () -> Unit,
+    onPick: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
     val header = stringResource(R.string.audio_title)
     ScreenLayout(
         modifier,
@@ -37,8 +42,11 @@ internal fun AudioEntryScreen(onRecord: () -> Unit, onPick: () -> Unit, onClose:
             PrimaryButton(stringResource(R.string.audio_record), onRecord, Modifier.fillMaxWidth())
             SecondaryButton(stringResource(R.string.audio_pick), onPick, Modifier.fillMaxWidth())
             Text(
-                stringResource(R.string.audio_formats), Modifier.fillMaxWidth(),
-                color = DejaViewColors.mutedText, style = DejaViewType.caption, textAlign = TextAlign.Center,
+                stringResource(R.string.audio_formats),
+                Modifier.fillMaxWidth(),
+                color = DejaViewColors.mutedText,
+                style = DejaViewType.caption,
+                textAlign = TextAlign.Center,
             )
         },
     ) {
@@ -50,7 +58,9 @@ internal fun AudioEntryScreen(onRecord: () -> Unit, onPick: () -> Unit, onClose:
             Box(Modifier.size(112.dp).background(DejaViewColors.surface, DejaViewShapes.pill), contentAlignment = Alignment.Center) {
                 Icon(
                     painterResource(ru.dejaview.core.ui.R.drawable.dv_search_audio),
-                    null, Modifier.size(44.dp), tint = DejaViewColors.accent,
+                    null,
+                    Modifier.size(44.dp),
+                    tint = DejaViewColors.accent,
                 )
             }
             Text(stringResource(R.string.audio_listening_intro), style = DejaViewType.heading, textAlign = TextAlign.Center)
@@ -60,7 +70,12 @@ internal fun AudioEntryScreen(onRecord: () -> Unit, onPick: () -> Unit, onClose:
 }
 
 @Composable
-internal fun AudioPermissionScreen(onSettings: () -> Unit, onPick: () -> Unit, onClose: () -> Unit, modifier: Modifier) {
+internal fun AudioPermissionScreen(
+    onSettings: () -> Unit,
+    onPick: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
     SearchStatusPage(
         FeedbackKind.Microphone,
         stringResource(R.string.audio_title),

@@ -53,8 +53,10 @@ internal fun AudioRecordingScreen(
             Text(stringResource(R.string.audio_recording_state), color = DejaViewColors.recording, style = DejaViewType.overline)
             Text(stringResource(R.string.audio_listening), style = DejaViewType.heading)
             Text(
-                stringResource(R.string.audio_recording_tip), color = DejaViewColors.secondaryText,
-                textAlign = TextAlign.Center, style = DejaViewType.body,
+                stringResource(R.string.audio_recording_tip),
+                color = DejaViewColors.secondaryText,
+                textAlign = TextAlign.Center,
+                style = DejaViewType.body,
             )
             Box(
                 Modifier.size(168.dp).border(1.dp, DejaViewColors.recording.copy(alpha = .38f), CircleShape),
@@ -62,8 +64,11 @@ internal fun AudioRecordingScreen(
             ) {
                 IconButton(
                     onClick = onStop,
-                    modifier = Modifier.size(108.dp).background(DejaViewColors.recording, CircleShape)
-                        .semantics { contentDescription = stop },
+                    modifier =
+                        Modifier
+                            .size(108.dp)
+                            .background(DejaViewColors.recording, CircleShape)
+                            .semantics { contentDescription = stop },
                 ) {
                     Box(Modifier.size(34.dp).background(DejaViewColors.background, DejaViewShapes.poster))
                 }

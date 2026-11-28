@@ -11,7 +11,11 @@ import androidx.compose.ui.unit.dp
 import ru.dejaview.core.ui.theme.DejaViewColors
 
 @Composable
-internal fun AudioWaveform(samples: List<Float>, progress: Float = 1f, modifier: Modifier = Modifier) {
+internal fun AudioWaveform(
+    samples: List<Float>,
+    progress: Float = 1f,
+    modifier: Modifier = Modifier,
+) {
     Canvas(modifier.fillMaxWidth().height(52.dp)) {
         val center = size.height / 2
         val played = progress.coerceIn(0f, 1f)

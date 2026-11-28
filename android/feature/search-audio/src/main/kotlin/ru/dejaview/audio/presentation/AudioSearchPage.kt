@@ -30,7 +30,11 @@ internal fun AudioSearchPage(
 }
 
 @Composable
-private fun AudioProgress(state: AudioState, onCancel: () -> Unit, modifier: Modifier) {
+private fun AudioProgress(
+    state: AudioState,
+    onCancel: () -> Unit,
+    modifier: Modifier,
+) {
     val uploadSize = state.draft?.byteCount?.takeIf { state.phase == AudioPhase.Uploading && it > 0 }
     val title =
         when (state.phase) {
