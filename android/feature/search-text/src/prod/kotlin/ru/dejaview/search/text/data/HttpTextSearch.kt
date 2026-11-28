@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference.data
+package ru.dejaview.search.text.data
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
@@ -15,14 +15,14 @@ import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.network.BackendClient
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
+import ru.dejaview.search.text.domain.TextSearch
 import javax.inject.Inject
 
 internal class HttpTextSearch
     @Inject
     constructor(
         private val client: BackendClient,
-    ) : ReferenceSearch {
+    ) : TextSearch {
         override suspend fun search(query: String): AppResult<List<MovieSummary>> {
             val json = buildJsonObject { put("query", query) }
             val reply = client.send("search/text", json.toString().toRequestBody(JSON))

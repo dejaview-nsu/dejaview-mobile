@@ -1,8 +1,9 @@
-package ru.dejaview.search.text.reference.domain
+package ru.dejaview.search.text.domain
 
 internal const val MIN_QUERY_LENGTH = 3
 internal const val MAX_QUERY_LENGTH = 250
 private const val MAX_DRAFT_LENGTH = MAX_QUERY_LENGTH + 1
+
 // Unicode White_Space used by the backend. Kotlin trim also removes U+001C–U+001F.
 private const val QUERY_WHITESPACE =
     "\t\n\u000B\u000C\r \u0085\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005" +

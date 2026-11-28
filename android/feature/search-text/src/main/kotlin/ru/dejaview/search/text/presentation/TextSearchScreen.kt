@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference.presentation
+package ru.dejaview.search.text.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,20 +34,20 @@ import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.searchtext.R
-import ru.dejaview.search.text.reference.domain.MAX_QUERY_LENGTH
-import ru.dejaview.search.text.reference.domain.MIN_QUERY_LENGTH
+import ru.dejaview.search.text.domain.MAX_QUERY_LENGTH
+import ru.dejaview.search.text.domain.MIN_QUERY_LENGTH
 
 private const val DESCRIPTION_LINES = 6
 
 @Composable
-internal fun ReferenceSearchScreen(
-    state: ReferenceSearchState,
-    onAction: (ReferenceSearchAction) -> Unit,
+internal fun TextSearchScreen(
+    state: TextSearchState,
+    onAction: (TextSearchAction) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.status == SearchStatus.Loading) {
-        SearchLoadingScreen(onCancel = { onAction(ReferenceSearchAction.Cancel) }, modifier = modifier.imePadding())
+        SearchLoadingScreen(onCancel = { onAction(TextSearchAction.Cancel) }, modifier = modifier.imePadding())
         return
     }
     if (state.status == SearchStatus.Offline || state.status == SearchStatus.Failed || state.status is SearchStatus.RateLimited) {
@@ -66,7 +66,7 @@ internal fun ReferenceSearchScreen(
     val submit = {
         focus.clearFocus()
         keyboard?.hide()
-        onAction(ReferenceSearchAction.Submit)
+        onAction(TextSearchAction.Submit)
     }
     Column(modifier.fillMaxSize().imePadding()) {
         Column(
@@ -74,10 +74,10 @@ internal fun ReferenceSearchScreen(
             verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
         ) {
             SearchHeading()
-            DescriptionField(state, onValueChange = { onAction(ReferenceSearchAction.Edit(it)) })
+            DescriptionField(state, onValueChange = { onAction(TextSearchAction.Edit(it)) })
         }
         PrimaryButton(
-            text = stringResource(R.string.reference_search_submit),
+            text = stringResource(R.string.text_search_submit),
             onClick = submit,
             modifier = Modifier.fillMaxWidth().padding(vertical = DejaViewSpacing.small),
             enabled = state.canSubmit,
@@ -87,14 +87,14 @@ internal fun ReferenceSearchScreen(
 
 @Composable
 private fun SearchHeading() {
-    Text(stringResource(R.string.reference_search_title), style = DejaViewType.title)
+    Text(stringResource(R.string.text_search_title), style = DejaViewType.title)
     Text(
-        text = stringResource(R.string.reference_search_heading),
+        text = stringResource(R.string.text_search_heading),
         modifier = Modifier.semantics { heading() },
         style = DejaViewType.heading,
     )
     Text(
-        text = stringResource(R.string.reference_search_explanation),
+        text = stringResource(R.string.text_search_explanation),
         style = DejaViewType.body,
         color = DejaViewColors.secondaryText,
     )
@@ -102,20 +102,20 @@ private fun SearchHeading() {
 
 @Composable
 private fun DescriptionField(
-    state: ReferenceSearchState,
+    state: TextSearchState,
     onValueChange: (String) -> Unit,
 ) {
     DejaViewTextField(
         value = state.query,
         onValueChange = onValueChange,
-        label = stringResource(R.string.reference_search_description),
-        placeholder = stringResource(R.string.reference_search_example),
+        label = stringResource(R.string.text_search_description),
+        placeholder = stringResource(R.string.text_search_example),
         isError = state.characterCount > MAX_QUERY_LENGTH,
         supportingText = {
             Text(
                 text =
                     stringResource(
-                        R.string.reference_search_count,
+                        R.string.text_search_count,
                         state.characterCount,
                         MAX_QUERY_LENGTH,
                         MIN_QUERY_LENGTH,
@@ -141,11 +141,11 @@ private fun DescriptionField(
 @Composable
 private fun SearchFeedback(
     status: SearchStatus,
-    onAction: (ReferenceSearchAction) -> Unit,
+    onAction: (TextSearchAction) -> Unit,
     modifier: Modifier = Modifier,
     secondaryAction: (@Composable () -> Unit)? = null,
 ) {
-    val retry = { onAction(ReferenceSearchAction.Submit) }
+    val retry = { onAction(TextSearchAction.Submit) }
     when (status) {
         SearchStatus.Editing, SearchStatus.Loading -> Unit
         SearchStatus.Offline -> ContentFeedback(FeedbackKind.Offline, modifier, onAction = retry, secondaryAction = secondaryAction)

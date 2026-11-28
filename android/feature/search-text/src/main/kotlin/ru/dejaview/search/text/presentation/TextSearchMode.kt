@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference.presentation
+package ru.dejaview.search.text.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -19,7 +19,7 @@ import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import ru.dejaview.search.api.SearchModalityUi
 import ru.dejaview.search.api.SearchModeKey
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
+import ru.dejaview.search.text.domain.TextSearch
 import javax.inject.Inject
 
 @Module
@@ -33,7 +33,7 @@ internal interface TextSearchModule {
 internal class TextSearchMode
     @Inject
     constructor(
-        private val search: ReferenceSearch,
+        private val search: TextSearch,
     ) : SearchModalityUi {
         override val mode = SearchMode.TEXT
 
@@ -43,7 +43,7 @@ internal class TextSearchMode
             onCompleted: (SearchCompletion) -> Unit,
             modifier: Modifier,
         ) {
-            val model = viewModel { ReferenceSearchViewModel(search, createSavedStateHandle()) }
+            val model = viewModel { TextSearchViewModel(search, createSavedStateHandle()) }
             val state by model.state.collectAsStateWithLifecycle()
             val callback by rememberUpdatedState(onCompleted)
             val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -54,7 +54,7 @@ internal class TextSearchMode
                     if (model.state.value.status == SearchStatus.Loading) cancel()
                 }
             }
-            ReferenceSearchScreen(
+            TextSearchScreen(
                 state,
                 onAction = { action -> model.onAction(action) { callback(it) } },
                 onBack = { backDispatcher?.onBackPressed() },

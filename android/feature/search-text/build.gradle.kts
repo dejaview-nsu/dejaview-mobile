@@ -64,10 +64,10 @@ fun verifyTextSearchCoverage(
 verifyTextSearchCoverage(
     "Demo",
     listOf(
-        "**/FakeReferenceSearch*.class",
-        "**/text/reference/domain/**",
-        "**/ReferenceSearchViewModel*.class",
-        "**/ReferenceSearchState.class",
+        "**/FakeTextSearch*.class",
+        "**/text/domain/**",
+        "**/TextSearchViewModel*.class",
+        "**/TextSearchState.class",
     ),
 )
 verifyTextSearchCoverage("Prod", listOf("**/HttpTextSearch*.class"))

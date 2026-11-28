@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference.presentation
+package ru.dejaview.search.text.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -12,18 +12,18 @@ import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
-import ru.dejaview.search.text.reference.domain.MAX_QUERY_LENGTH
-import ru.dejaview.search.text.reference.domain.MIN_QUERY_LENGTH
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
-import ru.dejaview.search.text.reference.domain.boundedDraft
-import ru.dejaview.search.text.reference.domain.queryLength
-import ru.dejaview.search.text.reference.domain.trimQuery
+import ru.dejaview.search.text.domain.MAX_QUERY_LENGTH
+import ru.dejaview.search.text.domain.MIN_QUERY_LENGTH
+import ru.dejaview.search.text.domain.TextSearch
+import ru.dejaview.search.text.domain.boundedDraft
+import ru.dejaview.search.text.domain.queryLength
+import ru.dejaview.search.text.domain.trimQuery
 import java.time.Instant
 import java.util.UUID
 
 private const val DRAFT_KEY = "reference-search-query"
 
-internal data class ReferenceSearchState(
+internal data class TextSearchState(
     val query: String = "",
     val status: SearchStatus = SearchStatus.Editing,
 ) {
@@ -45,32 +45,32 @@ internal sealed interface SearchStatus {
     ) : SearchStatus
 }
 
-internal sealed interface ReferenceSearchAction {
+internal sealed interface TextSearchAction {
     data class Edit(
         val query: String,
-    ) : ReferenceSearchAction
+    ) : TextSearchAction
 
-    data object Submit : ReferenceSearchAction
+    data object Submit : TextSearchAction
 
-    data object Cancel : ReferenceSearchAction
+    data object Cancel : TextSearchAction
 }
 
-internal class ReferenceSearchViewModel(
-    private val search: ReferenceSearch,
+internal class TextSearchViewModel(
+    private val search: TextSearch,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(ReferenceSearchState(query = savedState.get<String>(DRAFT_KEY).orEmpty().boundedDraft()))
+    private val mutableState = MutableStateFlow(TextSearchState(query = savedState.get<String>(DRAFT_KEY).orEmpty().boundedDraft()))
     val state = mutableState.asStateFlow()
     private var request: Job? = null
 
     fun onAction(
-        action: ReferenceSearchAction,
+        action: TextSearchAction,
         onCompleted: (SearchCompletion) -> Unit,
     ) {
         when (action) {
-            is ReferenceSearchAction.Edit -> edit(action.query)
-            ReferenceSearchAction.Submit -> submit(onCompleted)
-            ReferenceSearchAction.Cancel -> cancelSearch()
+            is TextSearchAction.Edit -> edit(action.query)
+            TextSearchAction.Submit -> submit(onCompleted)
+            TextSearchAction.Cancel -> cancelSearch()
         }
     }
 
@@ -78,7 +78,7 @@ internal class ReferenceSearchViewModel(
         request?.cancel()
         val query = text.boundedDraft()
         savedState[DRAFT_KEY] = query
-        mutableState.value = ReferenceSearchState(query = query)
+        mutableState.value = TextSearchState(query = query)
     }
 
     fun cancelSearch() {

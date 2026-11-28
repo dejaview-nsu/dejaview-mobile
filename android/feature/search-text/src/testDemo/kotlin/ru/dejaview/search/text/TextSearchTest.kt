@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference
+package ru.dejaview.search.text
 
 import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Dispatchers
@@ -20,16 +20,16 @@ import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
-import ru.dejaview.search.text.reference.data.FakeReferenceSearch
-import ru.dejaview.search.text.reference.presentation.ReferenceSearchAction
-import ru.dejaview.search.text.reference.presentation.ReferenceSearchViewModel
-import ru.dejaview.search.text.reference.presentation.SearchStatus
+import ru.dejaview.search.text.data.FakeTextSearch
+import ru.dejaview.search.text.presentation.TextSearchAction
+import ru.dejaview.search.text.presentation.TextSearchViewModel
+import ru.dejaview.search.text.presentation.SearchStatus
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ReferenceSearchTest {
+class TextSearchTest {
     private val dispatcher = StandardTestDispatcher()
 
     @Before
@@ -42,7 +42,7 @@ class ReferenceSearchTest {
     fun validatesUnicodeAndRestoresBoundedDraft() =
         runTest {
             val savedState = SavedStateHandle()
-            val vm = ReferenceSearchViewModel(FakeReferenceSearch(), savedState)
+            val vm = TextSearchViewModel(FakeTextSearch(), savedState)
 
             vm.edit("  аа  ")
             vm.submit()
@@ -56,7 +56,7 @@ class ReferenceSearchTest {
             vm.edit("🎬".repeat(10_000))
             assertEquals(251, vm.state.value.characterCount)
             assertFalse(vm.state.value.canSubmit)
-            assertEquals(vm.state.value, ReferenceSearchViewModel(FakeReferenceSearch(), savedState).state.value)
+            assertEquals(vm.state.value, TextSearchViewModel(FakeTextSearch(), savedState).state.value)
         }
 
     @Test
@@ -64,7 +64,7 @@ class ReferenceSearchTest {
         runTest {
             val requests = mutableListOf<String>()
             val vm =
-                ReferenceSearchViewModel(
+                TextSearchViewModel(
                     { query ->
                         requests += query
                         AppResult.Success(emptyList())
@@ -91,18 +91,18 @@ class ReferenceSearchTest {
     @Test
     fun publishesSuccessfulAndEmptySearchesToTheShellWithTheDraftIntact() =
         runTest {
-            val vm = ReferenceSearchViewModel(FakeReferenceSearch(), SavedStateHandle())
+            val vm = TextSearchViewModel(FakeTextSearch(), SavedStateHandle())
             val delivered = mutableListOf<SearchCompletion>()
 
             vm.edit("  космос  ")
-            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            vm.onAction(TextSearchAction.Submit, delivered::add)
             assertEquals(SearchStatus.Loading, vm.state.value.status)
             advanceUntilIdle()
             assertEquals(SearchStatus.Editing, vm.state.value.status)
             assertEquals("  космос  ", vm.state.value.query)
 
             vm.edit("несуществующий сюжет")
-            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            vm.onAction(TextSearchAction.Submit, delivered::add)
             advanceUntilIdle()
             assertEquals(listOf(1, 0), delivered.map { it.results.size })
             assertEquals(
@@ -124,7 +124,7 @@ class ReferenceSearchTest {
             val errors = ArrayDeque(listOf(AppError.Offline(), AppError.ServiceUnavailable(), AppError.RateLimit(12)))
             val requests = mutableListOf<String>()
             val vm =
-                ReferenceSearchViewModel(
+                TextSearchViewModel(
                     search = { query ->
                         requests += query
                         AppResult.Failure(errors.removeFirst())
@@ -155,22 +155,22 @@ class ReferenceSearchTest {
             val answers = mutableListOf<Continuation<AppResult<List<MovieSummary>>>>()
             val delivered = mutableListOf<SearchCompletion>()
             val vm =
-                ReferenceSearchViewModel(
+                TextSearchViewModel(
                     search = { suspendCoroutine { answers += it } },
                     savedState = SavedStateHandle(),
                 )
             vm.edit("космос")
-            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            vm.onAction(TextSearchAction.Submit, delivered::add)
             runCurrent()
-            vm.onAction(ReferenceSearchAction.Cancel, delivered::add)
+            vm.onAction(TextSearchAction.Cancel, delivered::add)
             answers[0].resume(AppResult.Success(listOf(MovieSummary(1, "Старый результат"))))
             runCurrent()
             assertEquals(SearchStatus.Editing, vm.state.value.status)
 
-            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            vm.onAction(TextSearchAction.Submit, delivered::add)
             runCurrent()
             vm.edit("поезд")
-            vm.onAction(ReferenceSearchAction.Submit, delivered::add)
+            vm.onAction(TextSearchAction.Submit, delivered::add)
             runCurrent()
             answers[1].resume(AppResult.Success(listOf(MovieSummary(1, "Старый результат"))))
             runCurrent()
@@ -182,7 +182,7 @@ class ReferenceSearchTest {
             assertEquals(listOf(movie), delivered.single().results)
         }
 
-    private fun ReferenceSearchViewModel.edit(query: String) = onAction(ReferenceSearchAction.Edit(query)) {}
+    private fun TextSearchViewModel.edit(query: String) = onAction(TextSearchAction.Edit(query)) {}
 
-    private fun ReferenceSearchViewModel.submit() = onAction(ReferenceSearchAction.Submit) {}
+    private fun TextSearchViewModel.submit() = onAction(TextSearchAction.Submit) {}
 }

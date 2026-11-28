@@ -1,4 +1,4 @@
-package ru.dejaview.search.text.reference.data
+package ru.dejaview.search.text.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
