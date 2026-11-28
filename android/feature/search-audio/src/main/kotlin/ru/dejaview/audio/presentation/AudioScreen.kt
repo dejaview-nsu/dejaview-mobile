@@ -46,9 +46,9 @@ internal fun AudioScreen(
     state: AudioState,
     model: AudioViewModel,
     modifier: Modifier,
+    onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    val activity = LocalActivity.current
     var denied by remember { mutableStateOf(false) }
     val permission =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -56,81 +56,23 @@ internal fun AudioScreen(
             if (granted) model.record()
         }
     val document = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::pick) }
-    val ready = state.phase == AudioPhase.Ready
-    Column(
-        modifier.verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
-        verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.medium), verticalAlignment = Alignment.CenterVertically) {
-            Icon(painterResource(ru.dejaview.core.ui.R.drawable.dv_search_audio), null, Modifier.size(28.dp), tint = DejaViewColors.accent)
-            Text(stringResource(R.string.audio_title), style = DejaViewType.heading)
-        }
-        Text(stringResource(R.string.audio_formats), style = DejaViewType.body, color = DejaViewColors.secondaryText)
-        state.draft?.let {
-            Surface(modifier = Modifier.fillMaxWidth(), shape = DejaViewShapes.card, color = DejaViewColors.surface) {
-                Text(
-                    stringResource(R.string.audio_draft, it.displayName, (it.durationMs ?: 0) / 1000.0, it.byteCount / 1024.0),
-                    modifier = Modifier.padding(DejaViewSpacing.large),
-                    style = DejaViewType.bodyMedium,
-                )
-            }
-        }
-        if (ready) {
-            PrimaryButton(stringResource(R.string.audio_pick), {
-                document.launch(arrayOf("audio/*", "application/ogg", "video/mp4"))
-            }, Modifier.fillMaxWidth())
-            TextButton(onClick = {
-                if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                    denied = false
-                    model.record()
-                } else {
-                    permission.launch(Manifest.permission.RECORD_AUDIO)
-                }
-            }) { Text(stringResource(R.string.audio_record)) }
-            if (denied) {
-                Text(stringResource(R.string.audio_denied))
-                if (activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == false) {
-                    TextButton(onClick = {
-                        context.startActivity(
-                            Intent(
-                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.parse("package:" + context.packageName),
-                            ),
-                        )
-                    }) {
-                        Text(stringResource(R.string.audio_settings))
-                    }
-                }
-            }
-            if (state.draft != null) {
-                TextButton(onClick = model::play) { Text(stringResource(R.string.audio_play)) }
-                TextButton(onClick = model::remove) { Text(stringResource(R.string.audio_delete)) }
-                PrimaryButton(stringResource(R.string.audio_submit), model::submit, Modifier.fillMaxWidth())
-            }
-        } else {
-            when (state.phase) {
-                AudioPhase.Playing -> TextButton(onClick = model::interrupt) { Text(stringResource(R.string.audio_stop_play)) }
-                AudioPhase.Recording -> PrimaryButton(stringResource(R.string.audio_stop_record), model::finishRecording)
-                AudioPhase.Importing -> Text(stringResource(R.string.audio_import))
-                AudioPhase.Uploading -> {
-                    LinearProgressIndicator(
-                        progress = { state.sent.toFloat() / (state.draft?.byteCount ?: 1) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Text(stringResource(R.string.audio_upload, state.sent, state.draft?.byteCount ?: 0))
-                }
-                AudioPhase.Processing -> {
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                    Text(stringResource(R.string.audio_processing))
-                }
-                AudioPhase.Ready -> Unit
-            }
-            if (state.phase in setOf(AudioPhase.Uploading, AudioPhase.Processing, AudioPhase.Importing)) {
-                TextButton(onClick = model::cancelUpload) { Text(stringResource(R.string.audio_cancel)) }
-            }
-        }
-        state.error?.let { Text(stringResource(audioError(it)), color = MaterialTheme.colorScheme.error) }
+    val onPick = {
+        denied = false
+        model.interrupt()
+        document.launch(arrayOf("audio/*", "application/ogg", "video/mp4"))
     }
+    val onRecord = {
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            denied = false
+            model.record()
+        } else {
+            permission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    val onSettings = {
+        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)))
+    }
+    AudioSearchPage(state, model, denied, onRecord, onPick, onSettings, onClose, modifier)
 }
 
 private fun audioError(error: AppError): Int =
