@@ -9,6 +9,7 @@ plugins {
 
 dependencies {
     implementation(project(":feature:search-api"))
+    implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     add("prodImplementation", project(":core:network"))
