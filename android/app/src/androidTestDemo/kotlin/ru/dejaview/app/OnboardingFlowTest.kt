@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
@@ -28,6 +30,17 @@ class OnboardingFlowTest {
                 awaitText("С возвращением")
                 compose.onNodeWithText("Создать аккаунт").performScrollTo().performClick()
                 compose.onNodeWithText("Регистрация").assertIsDisplayed()
+                for ((label, value) in listOf(
+                    "Имя пользователя" to "viewer_demo",
+                    "Электронная почта" to "viewer@example.test",
+                    "Год рождения" to "1998",
+                    "Пароль" to "Cinema!2000",
+                    "Повторите пароль" to "Cinema!2000",
+                )) {
+                    compose.onNodeWithContentDescription(label).performScrollTo().performTextInput(value)
+                }
+                compose.onNodeWithText("Создать аккаунт").performScrollTo().performClick()
+                awaitText("Проверьте почту")
                 assertTrue(preferences.getBoolean(INTRODUCTION_COMPLETED, false))
             }
             ActivityScenario.launch(MainActivity::class.java).use {

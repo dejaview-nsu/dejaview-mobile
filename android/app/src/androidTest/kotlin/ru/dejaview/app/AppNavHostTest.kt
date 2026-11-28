@@ -101,6 +101,7 @@ class AppNavHostTest {
     @Test
     fun cancellingProtectedModeLoginReturnsToTheModePicker() {
         compose.onNodeWithText("Кадр").performClick()
+        compose.onNodeWithText("Войти").performClick()
         assertScreen(ru.dejaview.feature.auth.R.string.auth_title)
         compose.onNodeWithText("Отмена").performClick()
         assertStartScreen()

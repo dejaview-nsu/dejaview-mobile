@@ -71,6 +71,7 @@ internal fun AudioPreviewScreen(
                 }
             }
             TextButton(onClick = onPick, enabled = !playing) { Text(stringResource(R.string.audio_pick)) }
+            TextButton(onClick = model::remove) { Text(stringResource(R.string.audio_delete)) }
         }
     }
 }
