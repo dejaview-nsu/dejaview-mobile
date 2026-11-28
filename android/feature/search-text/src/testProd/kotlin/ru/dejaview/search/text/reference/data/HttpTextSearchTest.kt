@@ -82,14 +82,26 @@ class HttpTextSearchTest {
             val broken =
                 listOf(
                     "{}",
+                    """{"results":[null]}""",
+                    """{"results":[{"title":"Пусто","year":null,"poster_url":null,"overview":null}]}""",
+                    """{"results":[{"movie_id":4,"year":null,"poster_url":null,"overview":null}]}""",
+                    """{"results":[{"movie_id":4,"title":"Пусто","poster_url":null,"overview":null}]}""",
+                    """{"results":[{"movie_id":4,"title":"Пусто","year":null,"overview":null}]}""",
                     """{"results":[{"movie_id":4,"title":"Пусто","year":null,"poster_url":null}]}""",
                     """{"results":[${NULL_CARD.replace("\"movie_id\":4", "\"movie_id\":\"4\"")}]}""",
+                    """{"results":[${NULL_CARD.replace("\"year\":null", "\"year\":\"2024\"")}]}""",
+                    """{"results":[${NULL_CARD.replace("\"year\":null", "\"year\":true")}]}""",
+                    """{"results":[${NULL_CARD.replace("\"poster_url\":null", "\"poster_url\":7")}]}""",
+                    """{"results":[${NULL_CARD.replace("\"overview\":null", "\"overview\":7")}]}""",
                     """{"results":[${List(11) { NULL_CARD }.joinToString(",")}]}""",
                 )
             broken.forEach { body ->
                 respond(body)
                 assertEquals(AppResult.Failure(AppError.Unknown("INVALID_RESPONSE")), search.search("abc"))
             }
+
+            server.enqueue(MockResponse().setResponseCode(204))
+            assertEquals(AppResult.Failure(AppError.Unknown("INVALID_RESPONSE")), search.search("abc"))
         }
 
     @Test

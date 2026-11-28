@@ -27,36 +27,47 @@ jacoco {
     toolVersion = libs.versions.jacoco.get()
 }
 
-tasks.register<JacocoCoverageVerification>("verifyReferenceSearchCoverage") {
-    dependsOn("testDemoDebugUnitTest")
-    val demoCoverage = layout.buildDirectory.file("jacoco/testDemoDebugUnitTest.exec")
-    executionData(demoCoverage)
-    classDirectories.setFrom(
-        layout.buildDirectory.dir("tmp/kotlin-classes/demoDebug").map { output ->
-            output.asFileTree.matching {
-                include(
-                    "**/reference/data/**",
-                    "**/reference/domain/**",
-                    "**/reference/presentation/ReferenceSearchViewModel*.class",
-                    "**/reference/presentation/ReferenceSearchState.class",
-                )
-            }
-        },
-    )
-    doFirst {
-        check(demoCoverage.get().asFile.isFile) { "The demo reference search coverage data was not produced" }
-        check(!classDirectories.isEmpty) { "The demo reference search classes were not found" }
-    }
-    violationRules {
-        rule {
-            limit {
-                counter = "LINE"
-                minimum = "0.85".toBigDecimal()
-            }
-            limit {
-                counter = "BRANCH"
-                minimum = "0.80".toBigDecimal()
+fun verifyTextSearchCoverage(
+    flavor: String,
+    includes: List<String>,
+) {
+    val unitTest = "test${flavor}DebugUnitTest"
+    val variant = flavor.lowercase() + "Debug"
+    tasks.register<JacocoCoverageVerification>("verify${flavor}TextSearchCoverage") {
+        dependsOn(unitTest)
+        val coverage = layout.buildDirectory.file("jacoco/$unitTest.exec")
+        executionData(coverage)
+        classDirectories.setFrom(
+            layout.buildDirectory.dir("tmp/kotlin-classes/$variant").map { output ->
+                output.asFileTree.matching { include(includes) }
+            },
+        )
+        doFirst {
+            check(coverage.get().asFile.isFile) { "The $variant text search coverage data was not produced" }
+            check(!classDirectories.isEmpty) { "The $variant text search classes were not found" }
+        }
+        violationRules {
+            rule {
+                limit {
+                    counter = "LINE"
+                    minimum = "0.85".toBigDecimal()
+                }
+                limit {
+                    counter = "BRANCH"
+                    minimum = "0.80".toBigDecimal()
+                }
             }
         }
     }
 }
+
+verifyTextSearchCoverage(
+    "Demo",
+    listOf(
+        "**/FakeReferenceSearch*.class",
+        "**/text/reference/domain/**",
+        "**/ReferenceSearchViewModel*.class",
+        "**/ReferenceSearchState.class",
+    ),
+)
+verifyTextSearchCoverage("Prod", listOf("**/HttpTextSearch*.class"))
