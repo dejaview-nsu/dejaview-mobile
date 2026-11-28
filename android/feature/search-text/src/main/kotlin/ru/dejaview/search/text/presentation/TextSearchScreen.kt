@@ -3,6 +3,7 @@ package ru.dejaview.search.text.presentation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -73,7 +74,7 @@ internal fun TextSearchScreen(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
             verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
         ) {
-            SearchHeading()
+            SearchHeading(onBack)
             DescriptionField(state, onValueChange = { onAction(TextSearchAction.Edit(it)) })
         }
         PrimaryButton(
@@ -86,8 +87,13 @@ internal fun TextSearchScreen(
 }
 
 @Composable
-private fun SearchHeading() {
-    Text(stringResource(R.string.text_search_title), style = DejaViewType.title)
+private fun SearchHeading(onBack: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBack) {
+            Icon(painterResource(R.drawable.text_search_back), stringResource(R.string.text_search_back))
+        }
+        Text(stringResource(R.string.text_search_title), style = DejaViewType.title)
+    }
     Text(
         text = stringResource(R.string.text_search_heading),
         modifier = Modifier.semantics { heading() },
