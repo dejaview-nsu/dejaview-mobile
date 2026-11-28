@@ -1,4 +1,6 @@
 <resources>
+    <string name="search_fallback_home">На главную</string>
+    <string name="search_fallback_detail">В этой сборке можно искать по описанию или звуку.</string>
     <string name="search_access_image">Поиск по кадру доступен после входа</string>
     <string name="search_access_video">Поиск по видео доступен после входа</string>
     <string name="search_access_audio">Поиск по звуку доступен после входа</string>
