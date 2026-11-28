@@ -9,8 +9,10 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import ru.dejaview.auth.data.HttpRegistrationService
 import ru.dejaview.auth.data.HttpSessionGateway
 import ru.dejaview.auth.data.SessionGateway
+import ru.dejaview.auth.domain.RegistrationService
 import ru.dejaview.feature.auth.BuildConfig
 import ru.dejaview.network.BackendClient
 import ru.dejaview.security.KeystoreSessionVault
@@ -26,6 +28,8 @@ internal object BackendModule {
     fun client() = BackendClient(backendOrigin)
 
     @Provides fun gateway(client: BackendClient): SessionGateway = HttpSessionGateway(client)
+
+    @Provides fun registration(client: BackendClient): RegistrationService = HttpRegistrationService(client)
 
     @Provides @Singleton
     fun sessions(

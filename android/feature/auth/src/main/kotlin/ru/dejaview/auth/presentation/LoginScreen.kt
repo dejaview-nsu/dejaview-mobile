@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,12 +24,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.dejaview.auth.domain.LoginService
 import ru.dejaview.contracts.AppError
+import ru.dejaview.core.ui.components.DejaViewMark
 import ru.dejaview.core.ui.components.DejaViewTextField
 import ru.dejaview.core.ui.components.PrimaryButton
+import ru.dejaview.core.ui.components.ScreenHeader
+import ru.dejaview.core.ui.theme.DejaViewColors
+import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.auth.R
@@ -36,6 +43,7 @@ import ru.dejaview.feature.auth.R
 fun LoginScreen(
     service: LoginService,
     onCancel: () -> Unit,
+    onRegister: () -> Unit,
 ) {
     val model = viewModel<LoginViewModel> { LoginViewModel(service) }
     val state by model.state.collectAsStateWithLifecycle()
@@ -52,7 +60,19 @@ fun LoginScreen(
         Modifier.imePadding().verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
         verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large),
     ) {
-        Text(stringResource(R.string.auth_title), style = DejaViewType.heading)
+        ScreenHeader(stringResource(R.string.auth_title), cancel)
+        DejaViewMark(Modifier.size(42.dp))
+        Text(stringResource(R.string.auth_welcome), style = DejaViewType.heading)
+        Text(stringResource(R.string.auth_welcome_detail), color = DejaViewColors.secondaryText, style = DejaViewType.body)
+        state.error?.let {
+            Surface(Modifier.fillMaxWidth(), shape = DejaViewShapes.field, color = DejaViewColors.elevated) {
+                Text(
+                    stringResource(message(it)),
+                    Modifier.padding(DejaViewSpacing.medium),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
         DejaViewTextField(
             login,
             {
@@ -77,13 +97,13 @@ fun LoginScreen(
                 }
             },
         )
-        state.error?.let { Text(stringResource(message(it)), color = MaterialTheme.colorScheme.error) }
         if (state.waitSeconds > 0) Text(stringResource(R.string.auth_wait, state.waitSeconds))
         if (state.captcha && !CHALLENGE_AVAILABLE) Text(stringResource(R.string.auth_challenge_unavailable))
         PrimaryButton(stringResource(if (state.busy) R.string.auth_busy else R.string.auth_submit), {
             if (state.captcha) challenge = true else model.submit(login, password, null)
         }, Modifier.fillMaxWidth(), enabled = !state.busy && state.waitSeconds == 0L && (!state.captcha || CHALLENGE_AVAILABLE))
         TextButton(onClick = cancel) { Text(stringResource(R.string.auth_cancel)) }
+        TextButton(onClick = onRegister, enabled = !state.busy) { Text(stringResource(R.string.registration_submit)) }
     }
     if (challenge) {
         CaptchaStep(onCancel = { challenge = false }, onToken = { token ->

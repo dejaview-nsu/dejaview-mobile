@@ -1,5 +1,17 @@
 <resources>
-    <string name="audio_title">Поиск по аудио</string>
+    <string name="audio_sending">Отправляем фрагмент</string>
+    <string name="audio_retry">Повторить</string>
+    <string name="audio_retry_after">Повторите поиск через %1$d с.</string>
+    <string name="audio_preview_ready">Фрагмент готов</string>
+    <string name="audio_preview_title">Проверьте запись</string>
+    <string name="audio_preview_tip">Послушайте фрагмент. Если слышно в основном шум или чужой голос — перезапишите.</string>
+    <string name="audio_again">Перезаписать</string>
+    <string name="audio_recording_state">Идёт запись</string>
+    <string name="audio_listening">Слушаю…</string>
+    <string name="audio_recording_tip">Поднесите телефон к динамику. Подойдёт музыка из фильма или реплика героя.</string>
+    <string name="audio_recording_time">0:%1$02d / 0:10</string>
+    <string name="audio_title">Поиск по звуку</string>
+    <string name="audio_listening_intro">Что звучит в фильме?</string>
     <string name="audio_formats">MP3, WAV, OGG или M4A · до 10 секунд и 20 МиБ</string>
     <string name="audio_pick">Выбрать файл</string><string name="audio_record">Записать звук</string>
     <string name="audio_draft">%1$s · %2$.1f с · %3$.1f КиБ</string><string name="audio_play">Прослушать</string>

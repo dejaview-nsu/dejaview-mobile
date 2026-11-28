@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ru.dejaview.core.ui.R
@@ -42,6 +43,7 @@ fun MovieCard(
     modifier: Modifier = Modifier,
     highlighted: Boolean = false,
     onClick: (() -> Unit)? = null,
+    overviewMaxLines: Int = Int.MAX_VALUE,
     poster: (@Composable () -> Unit)? = null,
 ) {
     Surface(
@@ -61,7 +63,7 @@ fun MovieCard(
                 width = if (highlighted) HIGHLIGHTED_POSTER_WIDTH else POSTER_WIDTH,
                 poster = poster,
             )
-            MovieDetails(movie, highlighted, Modifier.weight(1f))
+            MovieDetails(movie, highlighted, Modifier.weight(1f), overviewMaxLines)
         }
     }
 }
@@ -102,6 +104,7 @@ private fun MovieDetails(
     movie: MovieSummary,
     highlighted: Boolean,
     modifier: Modifier,
+    overviewMaxLines: Int,
 ) {
     val secondaryColor = if (highlighted) DejaViewColors.paperSecondaryText else DejaViewColors.secondaryText
     Column(modifier, verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.extraSmall)) {
@@ -111,7 +114,7 @@ private fun MovieDetails(
         Text(movie.title, style = if (highlighted) DejaViewType.subheading else DejaViewType.title)
         movie.year?.let { Text(it.toString(), style = DejaViewType.bodySmall, color = secondaryColor) }
         movie.overview?.takeIf(String::isNotBlank)?.let {
-            Text(it, style = DejaViewType.bodySmall, color = secondaryColor)
+            Text(it, style = DejaViewType.bodySmall, color = secondaryColor, maxLines = overviewMaxLines, overflow = TextOverflow.Ellipsis)
         }
     }
 }

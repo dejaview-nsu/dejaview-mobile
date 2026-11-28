@@ -2,6 +2,7 @@ package ru.dejaview.audio
 
 import android.content.Context
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -71,6 +72,7 @@ internal class AudioMode
             val state by model.state.collectAsStateWithLifecycle()
             LifecycleStartEffect(model) { onStopOrDispose { model.interrupt() } }
             LaunchedEffect(state.completion) { model.takeCompletion()?.let(onCompleted) }
-            AudioScreen(state, model, modifier)
+            val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            AudioScreen(state, model, modifier, onClose = { backDispatcher?.onBackPressed() })
         }
     }

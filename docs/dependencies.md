@@ -21,3 +21,7 @@
 
 - OkHttp 4.12.0 (Apache-2.0) предоставляет проверку области cookie, отменяемый вызов и потоковый multipart. Версия совместима с минимальным Android API 26 и уже присутствует в графе инструментов проекта. Dev 2 может использовать тот же транспорт. MockWebServer и okhttp-tls той же версии работают только в тестах с временным сертификатом. [OkHttp и MockWebServer](https://github.com/square/okhttp/tree/parent-4.12.0)
 - Dev 4 хранит ключ AES-GCM в Android Keystore. Зашифрованная запись сохраняется через AtomicFile в noBackupFilesDir. Для локального AAC/M4A, прослушивания и метаданных используются платформенные MediaRecorder, MediaPlayer и MediaMetadataRetriever. Эти возможности доступны на minSdk проекта. [Android Keystore](https://developer.android.com/privacy-and-security/keystore) · [MediaRecorder](https://developer.android.com/media/platform/mediarecorder)
+
+## Постеры в поиске
+
+- Coil Compose и Coil Network OkHttp 3.3.0 (Apache-2.0) обеспечивают загрузку, декодирование по размеру компонента и кеширование постеров. Встроенный BitmapFactory потребовал бы отдельно поддерживать отмену, кеш и управление памятью. Артефакты опубликованы в Maven Central. Сетевой модуль использует OkHttp 4.12.0, совместимый с версией проекта. Загрузка ограничена HTTPS и использует отдельный клиент без сессионных cookie. Владелец — Dev 1. [Coil](https://coil-kt.github.io/coil/getting_started/) · [Релиз](https://github.com/coil-kt/coil/releases/tag/3.3.0)

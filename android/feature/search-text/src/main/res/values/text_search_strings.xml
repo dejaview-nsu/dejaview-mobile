@@ -1,4 +1,10 @@
 <resources>
+    <string name="text_search_hint_title">Чтобы найти точнее, добавьте детали</string>
+    <string name="text_search_hint_place">Где происходит действие</string>
+    <string name="text_search_hint_character">Кто герои</string>
+    <string name="text_search_hint_year">Примерный год</string>
+    <string name="text_search_hint_scene">Чем запомнилась сцена</string>
+    <string name="text_search_guest_hint">По описанию можно искать без входа</string>
     <string name="text_search_title">Поиск по описанию</string>
     <string name="text_search_back">Назад</string>
     <string name="text_search_heading">Что вы помните о фильме?</string>

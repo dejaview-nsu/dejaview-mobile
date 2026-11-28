@@ -36,6 +36,7 @@ fun SearchModeSelector(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     subtitles: Map<SearchMode, String> = emptyMap(),
+    accessLabel: String? = null,
 ) {
     Column(modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.medium)) {
         for (row in SearchMode.entries.chunked(COLUMNS)) {
@@ -48,6 +49,7 @@ fun SearchModeSelector(
                         modifier = Modifier.weight(1f),
                         enabled = enabled,
                         subtitle = subtitles[mode],
+                        accessLabel = accessLabel?.takeIf { mode != SearchMode.TEXT },
                     )
                 }
             }
@@ -63,6 +65,7 @@ private fun SearchModeTile(
     modifier: Modifier,
     enabled: Boolean,
     subtitle: String?,
+    accessLabel: String?,
 ) {
     val borderColor = if (selected) DejaViewColors.paper else DejaViewColors.border
     Surface(
@@ -79,12 +82,19 @@ private fun SearchModeTile(
             modifier = Modifier.heightIn(min = TILE_MIN_HEIGHT).padding(DejaViewSpacing.large),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(
-                painter = painterResource(mode.icon),
-                contentDescription = null,
-                modifier = Modifier.size(TILE_ICON_SIZE),
-                tint = if (selected) DejaViewColors.paperLink else DejaViewColors.accent,
-            )
+            Row {
+                Icon(
+                    painter = painterResource(mode.icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(TILE_ICON_SIZE),
+                    tint = if (selected) DejaViewColors.paperLink else DejaViewColors.accent,
+                )
+                if (accessLabel != null) {
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
+                        Text(accessLabel, color = DejaViewColors.mutedText, style = DejaViewType.caption)
+                    }
+                }
+            }
             Column(Modifier.padding(top = DejaViewSpacing.small)) {
                 Text(stringResource(mode.label), style = DejaViewType.subheading)
                 if (subtitle != null) {
@@ -97,7 +107,7 @@ private fun SearchModeTile(
 }
 
 @get:StringRes
-private val SearchMode.label: Int
+val SearchMode.label: Int
     get() =
         when (this) {
             SearchMode.TEXT -> R.string.dv_mode_text
@@ -107,7 +117,7 @@ private val SearchMode.label: Int
         }
 
 @get:DrawableRes
-private val SearchMode.icon: Int
+val SearchMode.icon: Int
     get() =
         when (this) {
             SearchMode.TEXT -> R.drawable.dv_search_text

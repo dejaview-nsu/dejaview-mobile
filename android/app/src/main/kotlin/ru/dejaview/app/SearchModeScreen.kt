@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,8 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import ru.dejaview.core.ui.components.DejaViewMark
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchModeSelector
+import ru.dejaview.core.ui.theme.DejaViewColors
+import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.SearchCompletion
@@ -29,6 +35,7 @@ import ru.dejaview.search.api.SearchModalityUi
 internal fun SearchHome(
     guest: Boolean,
     onLogin: () -> Unit,
+    onRegister: (() -> Unit)?,
     onProfile: () -> Unit,
     onMode: (SearchMode) -> Unit,
 ) {
@@ -41,7 +48,10 @@ internal fun SearchHome(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.app_name), style = DejaViewType.title)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.small)) {
+                DejaViewMark(Modifier.size(26.dp))
+                Text(stringResource(R.string.app_name), style = DejaViewType.title)
+            }
             if (guest) {
                 TextButton(onClick = onLogin) { Text(stringResource(R.string.search_login)) }
             } else {
@@ -56,6 +66,7 @@ internal fun SearchHome(
         SearchModeSelector(
             selectedMode = if (guest) SearchMode.TEXT else null,
             onModeSelected = onMode,
+            accessLabel = if (guest) stringResource(R.string.search_mode_sign_in_badge) else null,
             subtitles =
                 mapOf(
                     SearchMode.TEXT to stringResource(if (guest) R.string.search_text_guest else R.string.search_text_hint),
@@ -64,6 +75,23 @@ internal fun SearchHome(
                     SearchMode.AUDIO to stringResource(R.string.search_audio_hint),
                 ),
         )
+        if (guest && onRegister != null) {
+            Surface(
+                onClick = onRegister,
+                modifier = Modifier.fillMaxWidth(),
+                shape = DejaViewShapes.card,
+                color = DejaViewColors.surface,
+            ) {
+                Column(Modifier.padding(DejaViewSpacing.large), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.small)) {
+                    Text(stringResource(R.string.search_guest_register), style = DejaViewType.title)
+                    Text(
+                        stringResource(R.string.search_guest_register_detail),
+                        color = DejaViewColors.secondaryText,
+                        style = DejaViewType.bodySmall,
+                    )
+                }
+            }
+        }
     }
 }
 

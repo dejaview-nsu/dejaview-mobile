@@ -1,7 +1,6 @@
 package ru.dejaview.search.text.presentation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +24,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import ru.dejaview.core.ui.components.ContentFeedback
+import androidx.compose.ui.text.style.TextAlign
 import ru.dejaview.core.ui.components.DejaViewTextField
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchLoadingScreen
+import ru.dejaview.core.ui.components.SearchStatusPage
 import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
@@ -52,14 +51,7 @@ internal fun TextSearchScreen(
         return
     }
     if (state.status == SearchStatus.Offline || state.status == SearchStatus.Failed || state.status is SearchStatus.RateLimited) {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            SearchFeedback(
-                state.status,
-                onAction,
-                Modifier.verticalScroll(rememberScrollState()).padding(vertical = DejaViewSpacing.large),
-                secondaryAction = { TextButton(onClick = onBack) { Text(stringResource(R.string.text_search_home)) } },
-            )
-        }
+        TextSearchFailure(state, retry = { onAction(TextSearchAction.Submit) }, onBack, modifier)
         return
     }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -76,7 +68,22 @@ internal fun TextSearchScreen(
         ) {
             SearchHeading(onBack)
             DescriptionField(state, onValueChange = { onAction(TextSearchAction.Edit(it)) })
+            DescriptionHints { hint ->
+                val prefix =
+                    state.query
+                        .trimEnd()
+                        .takeIf(String::isNotEmpty)
+                        ?.plus(" ") ?: ""
+                onAction(TextSearchAction.Edit(prefix + hint + " "))
+            }
         }
+        Text(
+            stringResource(R.string.text_search_guest_hint),
+            Modifier.fillMaxWidth(),
+            color = DejaViewColors.mutedText,
+            style = DejaViewType.caption,
+            textAlign = TextAlign.Center,
+        )
         PrimaryButton(
             text = stringResource(R.string.text_search_submit),
             onClick = submit,
@@ -145,27 +152,29 @@ private fun DescriptionField(
 }
 
 @Composable
-private fun SearchFeedback(
-    status: SearchStatus,
-    onAction: (TextSearchAction) -> Unit,
-    modifier: Modifier = Modifier,
-    secondaryAction: (@Composable () -> Unit)? = null,
+private fun TextSearchFailure(
+    state: TextSearchState,
+    retry: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier,
 ) {
-    val retry = { onAction(TextSearchAction.Submit) }
-    when (status) {
+    val header = stringResource(R.string.text_search_title)
+    when (state.status) {
         SearchStatus.Editing, SearchStatus.Loading -> Unit
-        SearchStatus.Offline -> ContentFeedback(FeedbackKind.Offline, modifier, onAction = retry, secondaryAction = secondaryAction)
-        SearchStatus.Failed -> ContentFeedback(FeedbackKind.Error, modifier, onAction = retry, secondaryAction = secondaryAction)
+        SearchStatus.Offline -> SearchStatusPage(FeedbackKind.Offline, header, retry, onBack, modifier)
+        SearchStatus.Failed -> SearchStatusPage(FeedbackKind.Error, header, retry, onBack, modifier)
         is SearchStatus.RateLimited ->
-            ContentFeedback(
+            SearchStatusPage(
                 FeedbackKind.Error,
+                header,
+                retry,
+                onBack,
                 modifier,
+                primaryEnabled = state.canSubmit,
                 title = stringResource(R.string.text_search_rate_limit),
                 message =
-                    status.retryAfterSeconds?.let { stringResource(R.string.text_search_retry_after, it) }
+                    state.retryInSeconds.takeIf { it > 0 }?.let { stringResource(R.string.text_search_retry_after, it) }
                         ?: stringResource(R.string.text_search_retry_later),
-                onAction = retry,
-                secondaryAction = secondaryAction,
             )
     }
 }

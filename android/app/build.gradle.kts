@@ -25,7 +25,7 @@ android {
                 .toInt()
         versionCode = 1
         versionName = "0.1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "ru.dejaview.app.DejaViewTestRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())

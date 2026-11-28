@@ -40,7 +40,7 @@ def run_smoke(serial, origin):
     try:
         with subprocess.Popen(command + [
             'shell', 'am', 'instrument', '-w', '-e', 'class', 'ru.dejaview.app.StagingAudioSmoke',
-            '-e', 'smokeSocket', channel, 'ru.dejaview.mobile.test/androidx.test.runner.AndroidJUnitRunner',
+            '-e', 'smokeSocket', channel, 'ru.dejaview.mobile.test/ru.dejaview.app.DejaViewTestRunner',
         ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True) as test:
             try:
                 send_credentials(test, int(port), origin, login, password)

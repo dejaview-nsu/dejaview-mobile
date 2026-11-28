@@ -13,6 +13,11 @@ data class SearchRoute(
 )
 
 @Serializable
+data class SearchAccessRoute(
+    val mode: SearchMode,
+)
+
+@Serializable
 data class ResultsRoute(
     val requestId: RequestId,
 )
@@ -28,6 +33,9 @@ data class LoginRoute(
 )
 
 @Serializable
+data object RegistrationRoute
+
+@Serializable
 data class LibraryRoute(
     val list: MovieList,
 )
@@ -40,3 +48,9 @@ data object HistoryRoute
 
 @Serializable
 data object SearchHomeRoute
+
+@Serializable
+data object OpeningRoute
+
+@Serializable
+data object OnboardingRoute

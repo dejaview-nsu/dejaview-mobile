@@ -3,6 +3,7 @@ package ru.dejaview.app
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -46,6 +47,7 @@ import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.MovieCard
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchModeSelector
+import ru.dejaview.core.ui.components.SearchStatusPage
 import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewTheme
 import ru.dejaview.model.MovieSummary
@@ -123,6 +125,36 @@ class SharedComponentsTest {
         assertEquals(background, image[image.width - 2, image.height - 2])
         assertEquals(accent, image[image.width / 8, image.height / 2])
         assertEquals(accent, image[image.width * 7 / 8, image.height / 2])
+    }
+
+    @Test
+    fun compactOfflinePageKeepsBothActionsBelowTheMessageAtLargeFontScale() {
+        var actions = 0
+        render {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
+                SearchStatusPage(
+                    FeedbackKind.Offline,
+                    "Поиск по описанию",
+                    onPrimary = { actions++ },
+                    onSecondary = { actions += 2 },
+                    modifier = Modifier.size(360.dp, 640.dp),
+                )
+            }
+        }
+        val title =
+            compose
+                .onNodeWithText("Нет подключения к интернету")
+                .assertIsDisplayed()
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val retry = compose.onNodeWithText("Повторить").assertIsDisplayed()
+        val home = compose.onNodeWithText("На главную").assertIsDisplayed()
+        assertTrue(title.bottom < retry.fetchSemanticsNode().boundsInRoot.top)
+        assertTrue(retry.fetchSemanticsNode().boundsInRoot.bottom < home.fetchSemanticsNode().boundsInRoot.top)
+        retry.performClick()
+        home.performClick()
+        compose.runOnIdle { assertEquals(3, actions) }
     }
 
     private fun render(content: @Composable () -> Unit) {

@@ -8,7 +8,9 @@ import dagger.hilt.components.SingletonComponent
 import ru.dejaview.auth.data.SessionGateway
 import ru.dejaview.auth.data.SessionRepository
 import ru.dejaview.auth.domain.LoginService
+import ru.dejaview.auth.domain.RegistrationService
 import ru.dejaview.auth.presentation.LoginScreen
+import ru.dejaview.auth.presentation.RegistrationScreen
 import ru.dejaview.contracts.session.SessionController
 import ru.dejaview.contracts.session.SessionCookieStore
 import ru.dejaview.contracts.session.SessionReader
@@ -25,11 +27,22 @@ internal object AuthModule {
         gateway: SessionGateway,
     ): SessionRepository = SessionRepository(registry, gateway, backendOrigin)
 
-    @Provides fun loginUi(service: LoginService): LoginUi =
+    @Provides fun loginUi(
+        service: LoginService,
+        registration: RegistrationService,
+    ): LoginUi =
         object : LoginUi {
             @Composable
-            override fun Content(onCancel: () -> Unit) {
-                LoginScreen(service, onCancel)
+            override fun Content(
+                onCancel: () -> Unit,
+                onRegister: () -> Unit,
+            ) {
+                LoginScreen(service, onCancel, onRegister)
+            }
+
+            @Composable
+            override fun Registration(onReturnToLogin: () -> Unit) {
+                RegistrationScreen(registration, onReturnToLogin)
             }
         }
 

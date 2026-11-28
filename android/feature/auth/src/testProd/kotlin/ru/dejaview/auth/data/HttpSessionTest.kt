@@ -34,6 +34,7 @@ class HttpSessionTest {
     private lateinit var sessions: SessionRegistry
     private lateinit var repository: SessionRepository
     private lateinit var gateway: HttpSessionGateway
+    private lateinit var registration: HttpRegistrationService
     private var persisted: StoredSession? = null
     private val identity = """{"user":{"username":"viewer","avatar_url":null,"has_password":true},"expires_at":"${Instant.now().plusSeconds(
         600,
@@ -66,7 +67,9 @@ class HttpSessionTest {
                     java.net.Proxy.NO_PROXY,
                 ).sslSocketFactory(trust.sslSocketFactory(), trust.trustManager)
                 .build()
-        gateway = HttpSessionGateway(BackendClient(origin, http))
+        val client = BackendClient(origin, http)
+        gateway = HttpSessionGateway(client)
+        registration = HttpRegistrationService(client)
         repository = SessionRepository(sessions, gateway, origin)
     }
 
@@ -74,6 +77,35 @@ class HttpSessionTest {
         scope.cancel()
         server.shutdown()
     }
+
+    @Test fun registrationAndResendUseThePublicEmailContract() =
+        runBlocking {
+            server.enqueue(MockResponse().setResponseCode(201).setBody("""{"resend_after":60}"""))
+            assertEquals(AppResult.Success(60), registration.register("viewer", "viewer@example.test", 1998, "Cinema!2000"))
+            val register = server.takeRequest()
+            assertEquals("/api/v1/auth/register", register.path)
+            assertEquals("POST", register.method)
+            assertNull(register.getHeader("Cookie"))
+            assertEquals(
+                """{"username":"viewer","email":"viewer@example.test","birth_year":1998,"password":"Cinema!2000"}""",
+                register.body.readUtf8(),
+            )
+
+            server.enqueue(MockResponse().setResponseCode(202).setBody("""{"resend_after":30}"""))
+            assertEquals(AppResult.Success(30), registration.resend("viewer@example.test"))
+            val resend = server.takeRequest()
+            assertEquals("/api/v1/auth/resend-confirmation", resend.path)
+            assertEquals("""{"login":"viewer@example.test"}""", resend.body.readUtf8())
+            assertEquals(SessionState.Initializing, sessions.state.value)
+        }
+
+    @Test fun rejectsMissingConfirmationDelayAndPreservesRateLimit() =
+        runBlocking {
+            server.enqueue(MockResponse().setResponseCode(202).setBody("{}"))
+            assertEquals(AppResult.Failure(AppError.Unknown("INVALID_RESPONSE")), registration.resend("viewer@example.test"))
+            server.enqueue(MockResponse().setResponseCode(429).addHeader("Retry-After", "17"))
+            assertEquals(AppResult.Failure(AppError.RateLimit(17)), registration.resend("viewer@example.test"))
+        }
 
     @Test fun verifiesCookieBeforePublishingAndDetachesBeforeLogoutFailure() =
         runBlocking {

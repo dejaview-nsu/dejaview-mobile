@@ -1,5 +1,7 @@
 <resources>
     <string name="auth_title">Вход</string>
+    <string name="auth_welcome">С возвращением</string>
+    <string name="auth_welcome_detail">Войдите, чтобы найденные фильмы оставались в ваших списках.</string>
     <string name="auth_login">Имя пользователя или email</string>
     <string name="auth_password">Пароль</string>
     <string name="auth_show">Показать</string><string name="auth_hide">Скрыть</string>

@@ -1,8 +1,8 @@
 package ru.dejaview.app
 
-import androidx.compose.foundation.layout.Column
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,7 +12,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
+import ru.dejaview.core.ui.components.ScreenHeader
+import ru.dejaview.core.ui.components.ScreenLayout
 import ru.dejaview.core.ui.components.SearchLoadingScreen
+import ru.dejaview.core.ui.components.SecondaryButton
+import ru.dejaview.core.ui.components.label
+import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
@@ -40,11 +45,14 @@ internal fun DemoMediaSearch(
     if (count != null) {
         SearchLoadingScreen(onCancel = { count = null }, modifier = modifier)
     } else {
-        Column(modifier) {
+        val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+        ScreenLayout(
+            modifier,
+            header = { ScreenHeader(stringResource(mode.label), onBack = { dispatcher?.onBackPressed() }, close = true) },
+        ) {
+            Text(input, style = DejaViewType.heading)
             listOf(10, 1, 0).forEach { size ->
-                TextButton(onClick = { count = size }) {
-                    Text(stringResource(R.string.demo_search_result_count, size))
-                }
+                SecondaryButton(stringResource(R.string.demo_search_result_count, size), { count = size }, Modifier.fillMaxWidth())
             }
         }
     }

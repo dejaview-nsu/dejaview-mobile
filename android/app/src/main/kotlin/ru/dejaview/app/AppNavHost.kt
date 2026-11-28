@@ -26,8 +26,12 @@ import ru.dejaview.navigation.HistoryRoute
 import ru.dejaview.navigation.LibraryRoute
 import ru.dejaview.navigation.LoginRoute
 import ru.dejaview.navigation.MovieRoute
+import ru.dejaview.navigation.OnboardingRoute
+import ru.dejaview.navigation.OpeningRoute
 import ru.dejaview.navigation.ProfileRoute
+import ru.dejaview.navigation.RegistrationRoute
 import ru.dejaview.navigation.ResultsRoute
+import ru.dejaview.navigation.SearchAccessRoute
 import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
 import ru.dejaview.search.api.SearchModalityUi
@@ -38,6 +42,7 @@ internal fun AppNavHost(
     searchServices: SearchServices,
     controller: SessionController,
     navController: NavHostController = rememberNavController(),
+    showIntroduction: Boolean = false,
 ) {
     val actions = viewModel<SessionActions> { SessionActions(controller) }
     val notice by actions.notice.collectAsStateWithLifecycle()
@@ -56,19 +61,71 @@ internal fun AppNavHost(
                 Text(stringResource(it))
                 TextButton(onClick = actions::dismiss) { Text(stringResource(R.string.notice_close)) }
             }
-            NavHost(navController = navController, startDestination = SearchHomeRoute) {
+            NavHost(navController = navController, startDestination = OpeningRoute) {
+                composable<OpeningRoute> { entry ->
+                    OpeningSplash {
+                        if (navController.currentBackStackEntry == entry) {
+                            val destination = if (showIntroduction) OnboardingRoute else SearchHomeRoute
+                            navController.navigate(destination) { popUpTo<OpeningRoute> { inclusive = true } }
+                        }
+                    }
+                }
+                composable<OnboardingRoute> { entry ->
+                    val continueToAccount: (Boolean) -> Unit = { register ->
+                        if (navController.isActive(entry)) {
+                            navController.navigate(SearchHomeRoute) { popUpTo<OnboardingRoute> { inclusive = true } }
+                            navController.navigate(LoginRoute())
+                            if (register && searchServices.login != null) navController.navigate(RegistrationRoute)
+                        }
+                    }
+                    OnboardingScreen(onLogin = { continueToAccount(false) }, onRegister = { continueToAccount(true) })
+                }
                 composable<SearchHomeRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
                     val session by vm.session.collectAsStateWithLifecycle()
                     SearchHome(
                         guest = session == SessionState.Guest || session == SessionState.Expired,
                         onProfile = { if (navController.isActive(entry)) navController.navigate(ProfileRoute) },
+                        onRegister =
+                            searchServices.login?.let {
+                                {
+                                    if (navController.isActive(entry)) {
+                                        navController.navigate(LoginRoute())
+                                        navController.navigate(RegistrationRoute)
+                                    }
+                                }
+                            },
                         onLogin = {
                             if (navController.isActive(entry)) navController.navigate(LoginRoute())
                         },
                     ) { mode ->
-                        if (navController.isActive(entry)) navController.openSearch(SearchRoute(mode), vm)
+                        if (navController.isActive(entry)) {
+                            if (vm.canOpen(mode)) {
+                                navController.openSearch(SearchRoute(mode), vm)
+                            } else {
+                                navController.navigate(SearchAccessRoute(mode))
+                            }
+                        }
                     }
+                }
+                composable<SearchAccessRoute> { entry ->
+                    val route = entry.toRoute<SearchAccessRoute>()
+                    val vm = searchViewModel(searchServices, navController, entry)
+                    val proceed = { mode: SearchMode, register: Boolean ->
+                        if (navController.isActive(entry)) {
+                            navController.popBackStack()
+                            navController.openSearch(SearchRoute(mode), vm)
+                            if (register && !vm.canOpen(mode) && searchServices.login != null) {
+                                navController.navigate(RegistrationRoute)
+                            }
+                        }
+                    }
+                    SearchAccessScreen(
+                        route.mode,
+                        onLogin = { proceed(route.mode, false) },
+                        onRegister = { proceed(route.mode, true) },
+                        onTextSearch = { proceed(SearchMode.TEXT, false) },
+                    )
                 }
                 composable<SearchRoute> { entry ->
                     val route = entry.toRoute<SearchRoute>()
@@ -83,6 +140,11 @@ internal fun AppNavHost(
                 composable<LoginRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
                     SearchLoginDestination(navController, entry, entry.toRoute(), vm, searchServices)
+                }
+                composable<RegistrationRoute> { entry ->
+                    searchServices.login?.Registration {
+                        if (navController.isActive(entry)) navController.popBackStack()
+                    }
                 }
                 composable<LibraryRoute> { Text(stringResource(R.string.library_placeholder)) }
                 composable<ProfileRoute> {

@@ -98,6 +98,7 @@ class DemoSearchFlowTest {
     @Test
     fun demoLoginReturnsToProtectedModeAndEmptyResultReturnsToTheSameMode() {
         compose.onNodeWithText("Видео").performClick()
+        compose.onNodeWithText("Войти").performClick()
         compose.onNodeWithContentDescription("Имя пользователя или email").performTextInput("viewer")
         compose.onNodeWithContentDescription("Пароль").performTextInput("x")
         compose.onNodeWithText("Войти").performClick()

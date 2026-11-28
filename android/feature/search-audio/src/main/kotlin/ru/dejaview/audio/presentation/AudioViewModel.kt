@@ -1,10 +1,12 @@
 package ru.dejaview.audio.presentation
 
 import android.net.Uri
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -28,6 +30,10 @@ internal data class AudioState(
     val phase: AudioPhase = AudioPhase.Ready,
     val draft: PreparedMedia? = null,
     val sent: Long = 0,
+    val elapsedMs: Long = 0,
+    val recordingLevels: List<Float> = emptyList(),
+    val waveform: List<Float> = emptyList(),
+    val retryInSeconds: Long = 0,
     val error: AppError? = null,
     val completion: SearchCompletion? = null,
 )
@@ -50,7 +56,10 @@ internal class AudioViewModel(
 
     fun pick(uri: Uri) = load { store.importDocument(uri) }
 
-    private fun load(source: suspend () -> AppResult<PreparedMedia>) {
+    private fun load(
+        waveform: List<Float> = emptyList(),
+        source: suspend () -> AppResult<PreparedMedia>,
+    ) {
         resetOperation()
         mutable.update { it.copy(phase = AudioPhase.Importing, error = null) }
         operation =
@@ -66,7 +75,7 @@ internal class AudioViewModel(
                             mutable.value.draft
                                 ?.takeUnless { it.id == result.value.id }
                                 ?.let { store.discard(it.id) }
-                            mutable.value = AudioState(draft = result.value)
+                            mutable.value = AudioState(draft = result.value, waveform = waveform)
                             imported = null
                         }
                         is AppResult.Failure -> fail(result.error)
@@ -88,7 +97,8 @@ internal class AudioViewModel(
                 interrupt()
                 fail(AppError.InvalidFile("MIC_BUSY"))
             }
-            mutable.update { it.copy(phase = AudioPhase.Recording, error = null) }
+            mutable.update { it.copy(phase = AudioPhase.Recording, error = null, elapsedMs = 0, recordingLevels = emptyList()) }
+            monitorRecording()
         } catch (_: IOException) {
             interrupt()
             fail(AppError.InvalidFile("MIC_BUSY"))
@@ -99,11 +109,12 @@ internal class AudioViewModel(
     }
 
     fun finishRecording() {
+        if (mutable.value.phase != AudioPhase.Recording) return
         val file = devices.finish()
         if (file == null) {
             fail(AppError.InvalidFile("MIC_BUSY"))
         } else {
-            load { store.register(file) }
+            load(mutable.value.recordingLevels) { store.register(file) }
             operation?.invokeOnCompletion { store.discardUnregistered(file) }
         }
     }
@@ -113,7 +124,14 @@ internal class AudioViewModel(
         resetOperation()
         try {
             devices.play(draft.id, { mutable.update { it.copy(phase = AudioPhase.Ready) } }, { fail(AppError.InvalidFile("PLAYBACK")) })
-            mutable.update { it.copy(phase = AudioPhase.Playing, error = null) }
+            mutable.update { it.copy(phase = AudioPhase.Playing, error = null, elapsedMs = 0) }
+            operation =
+                viewModelScope.launch {
+                    while (mutable.value.phase == AudioPhase.Playing) {
+                        mutable.update { it.copy(elapsedMs = devices.playbackPositionMs().toLong()) }
+                        delay(100)
+                    }
+                }
         } catch (_: IOException) {
             interrupt()
             fail(AppError.InvalidFile("PLAYBACK"))
@@ -123,10 +141,27 @@ internal class AudioViewModel(
         }
     }
 
+    private fun monitorRecording() {
+        val started = SystemClock.elapsedRealtime()
+        operation =
+            viewModelScope.launch {
+                while (mutable.value.phase == AudioPhase.Recording) {
+                    val amplitude = (devices.recordingAmplitude() / 32767f).coerceIn(0f, 1f)
+                    mutable.update {
+                        it.copy(
+                            elapsedMs = SystemClock.elapsedRealtime() - started,
+                            recordingLevels = (it.recordingLevels + amplitude).takeLast(50),
+                        )
+                    }
+                    delay(200)
+                }
+            }
+    }
+
     fun submit() {
         val initial = mutable.value
         val draft = initial.draft ?: return
-        if (initial.phase != AudioPhase.Ready || initial.completion != null) return
+        if (initial.phase != AudioPhase.Ready || initial.completion != null || initial.retryInSeconds > 0) return
         val attempt = ++revision
         mutable.update { it.copy(phase = AudioPhase.Uploading, sent = 0, error = null) }
         operation =
@@ -162,7 +197,15 @@ internal class AudioViewModel(
                                     ),
                             )
                     }
-                    is AppResult.Failure -> fail(result.error)
+                    is AppResult.Failure -> {
+                        fail(result.error)
+                        val wait = (result.error as? AppError.RateLimit)?.retryAfterSeconds ?: 0
+                        mutable.update { it.copy(retryInSeconds = wait) }
+                        while (mutable.value.retryInSeconds > 0) {
+                            delay(1000)
+                            mutable.update { it.copy(retryInSeconds = it.retryInSeconds - 1) }
+                        }
+                    }
                 }
             }
     }
@@ -188,7 +231,7 @@ internal class AudioViewModel(
         revision++
         operation?.cancel()
         devices.close()
-        mutable.update { it.copy(phase = AudioPhase.Ready, sent = 0) }
+        mutable.update { it.copy(phase = AudioPhase.Ready, sent = 0, retryInSeconds = 0) }
     }
 
     private fun fail(error: AppError) {
