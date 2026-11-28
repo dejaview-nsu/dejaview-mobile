@@ -46,9 +46,9 @@ class OnboardingFlowTest {
             compose.mainClock.autoAdvance = false
             ActivityScenario.launch(MainActivity::class.java).use {
                 compose.onNodeWithText(context.getString(R.string.splash_credit)).assertIsDisplayed()
-                compose.onNodeWithText("Найди фильм по обрывку памяти").assertDoesNotExist()
+                compose.onNodeWithText("Описание").assertDoesNotExist()
                 compose.mainClock.autoAdvance = true
-                awaitText("Найди фильм по обрывку памяти")
+                awaitText("Описание")
                 compose.onNodeWithText("Описание").assertIsDisplayed()
                 compose.onNodeWithText("Видели кусочек фильма? Найдём целиком").assertDoesNotExist()
             }
