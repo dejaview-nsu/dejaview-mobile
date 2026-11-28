@@ -4,7 +4,7 @@
       {"group": "format", "argv": ["gradlew", "spotlessCheck"]},
       {"group": "static", "argv": ["gradlew", ":app:lintDemoDebug", ":app:lintProdDebug"]},
       {"group": "architecture", "argv": ["gradlew", "checkArchitecture"]},
-      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", ":core:media:testDebugUnitTest", ":core:security:testDebugUnitTest", ":feature:auth:testDemoDebugUnitTest", ":feature:auth:testProdDebugUnitTest", ":feature:search-audio:testProdDebugUnitTest", ":feature:search-text:testDemoDebugUnitTest", ":feature:search:testDemoDebugUnitTest", ":feature:search:testProdDebugUnitTest", "--rerun-tasks"]},
+      {"group": "unit", "argv": ["gradlew", ":core:navigation:test", ":core:media:testDebugUnitTest", ":core:security:testDebugUnitTest", ":feature:auth:testDemoDebugUnitTest", ":feature:auth:testProdDebugUnitTest", ":feature:search-audio:testProdDebugUnitTest", ":feature:search-text:testDemoDebugUnitTest", ":feature:search-text:testProdDebugUnitTest", ":feature:search:testDemoDebugUnitTest", ":feature:search:testProdDebugUnitTest", "--rerun-tasks"]},
       {"group": "coverage", "argv": ["gradlew", ":core:navigation:jacocoTestCoverageVerification", ":feature:search-text:verifyReferenceSearchCoverage", ":feature:search:verifySearchCoverage"]},
       {"group": "build-demo", "argv": ["gradlew", "assembleDemoDebug", ":core:media:assembleDebug", ":core:network:assembleDebug", ":core:security:assembleDebug", ":core:storage:assembleDebug", ":core:testing:assemble"]},
       {"group": "build-prod", "argv": ["gradlew", "assembleProdDebug"]},
@@ -18,6 +18,7 @@
       "feature/auth/build/test-results/testProdDebugUnitTest/TEST-*.xml",
       "feature/search-audio/build/test-results/testProdDebugUnitTest/TEST-*.xml",
       "feature/search-text/build/test-results/testDemoDebugUnitTest/TEST-*.xml",
+      "feature/search-text/build/test-results/testProdDebugUnitTest/TEST-*.xml",
       "feature/search/build/test-results/testDemoDebugUnitTest/TEST-*.xml",
       "feature/search/build/test-results/testProdDebugUnitTest/TEST-*.xml"
     ],
