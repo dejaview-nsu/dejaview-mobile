@@ -105,6 +105,7 @@ internal class AudioViewModel(
     }
 
     fun finishRecording() {
+        if (mutable.value.phase != AudioPhase.Recording) return
         val file = devices.finish()
         if (file == null) {
             fail(AppError.InvalidFile("MIC_BUSY"))
