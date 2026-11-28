@@ -22,7 +22,10 @@ internal fun SearchFallback(
     modifier: Modifier,
 ) {
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    val onBack = { dispatcher?.onBackPressed(); Unit }
+    val onBack = {
+        dispatcher?.onBackPressed()
+        Unit
+    }
     ScreenLayout(
         modifier,
         header = { ScreenHeader(stringResource(route.mode.label), onBack, close = true) },

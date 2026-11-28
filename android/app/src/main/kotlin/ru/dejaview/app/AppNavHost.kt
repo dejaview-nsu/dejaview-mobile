@@ -89,8 +89,11 @@ internal fun AppNavHost(
                         },
                     ) { mode ->
                         if (navController.isActive(entry)) {
-                            if (vm.canOpen(mode)) navController.openSearch(SearchRoute(mode), vm)
-                            else navController.navigate(SearchAccessRoute(mode))
+                            if (vm.canOpen(mode)) {
+                                navController.openSearch(SearchRoute(mode), vm)
+                            } else {
+                                navController.navigate(SearchAccessRoute(mode))
+                            }
                         }
                     }
                 }

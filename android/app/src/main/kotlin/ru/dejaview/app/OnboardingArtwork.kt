@@ -29,14 +29,22 @@ internal fun OnboardingArtwork(modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.fillMaxWidth().heightIn(min = 174.dp, max = 278.dp), contentAlignment = Alignment.Center) {
         val cardWidth = minOf(maxWidth * .50f, 170.dp)
         OnboardingFilm(
-            Modifier.align(Alignment.CenterStart).padding(start = maxWidth * .09f).width(cardWidth * .85f).rotate(-12f),
+            Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = maxWidth * .09f)
+                .width(cardWidth * .85f)
+                .rotate(-12f),
             DejaViewColors.elevated,
             Color(0xFF233642),
             stringResource(R.string.onboarding_fragment),
             DejaViewColors.secondaryText,
         )
         OnboardingFilm(
-            Modifier.align(Alignment.CenterEnd).padding(end = maxWidth * .09f).width(cardWidth).rotate(11f),
+            Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = maxWidth * .09f)
+                .width(cardWidth)
+                .rotate(11f),
             DejaViewColors.paper,
             Color(0xFF784538),
             stringResource(R.string.onboarding_film),
@@ -54,7 +62,13 @@ private fun OnboardingFilm(
     text: Color,
 ) {
     Column(modifier.clip(DejaViewShapes.field).background(surface).padding(DejaViewSpacing.medium)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(.88f).clip(DejaViewShapes.poster).background(poster))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(.88f)
+                .clip(DejaViewShapes.poster)
+                .background(poster),
+        )
         Spacer(Modifier.padding(top = DejaViewSpacing.small))
         Text(title, color = text, style = DejaViewType.title)
     }

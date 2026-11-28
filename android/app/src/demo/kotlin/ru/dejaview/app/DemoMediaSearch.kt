@@ -12,9 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
-import ru.dejaview.core.ui.components.SearchLoadingScreen
 import ru.dejaview.core.ui.components.ScreenHeader
 import ru.dejaview.core.ui.components.ScreenLayout
+import ru.dejaview.core.ui.components.SearchLoadingScreen
 import ru.dejaview.core.ui.components.SecondaryButton
 import ru.dejaview.core.ui.components.label
 import ru.dejaview.core.ui.theme.DejaViewType

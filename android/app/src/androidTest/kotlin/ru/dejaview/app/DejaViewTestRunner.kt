@@ -7,7 +7,10 @@ import androidx.test.runner.AndroidJUnitRunner
 class DejaViewTestRunner : AndroidJUnitRunner() {
     override fun callApplicationOnCreate(app: Application) {
         super.callApplicationOnCreate(app)
-        app.getSharedPreferences(STARTUP_PREFERENCES, Context.MODE_PRIVATE)
-            .edit().putBoolean(INTRODUCTION_STARTED, true).commit()
+        app
+            .getSharedPreferences(STARTUP_PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(INTRODUCTION_STARTED, true)
+            .commit()
     }
 }

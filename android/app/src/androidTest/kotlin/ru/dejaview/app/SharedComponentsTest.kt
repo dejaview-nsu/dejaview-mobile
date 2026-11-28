@@ -3,8 +3,8 @@ package ru.dejaview.app
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -142,7 +142,12 @@ class SharedComponentsTest {
                 )
             }
         }
-        val title = compose.onNodeWithText("Нет подключения к интернету").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val title =
+            compose
+                .onNodeWithText("Нет подключения к интернету")
+                .assertIsDisplayed()
+                .fetchSemanticsNode()
+                .boundsInRoot
         val retry = compose.onNodeWithText("Повторить").assertIsDisplayed()
         val home = compose.onNodeWithText("На главную").assertIsDisplayed()
         assertTrue(title.bottom < retry.fetchSemanticsNode().boundsInRoot.top)

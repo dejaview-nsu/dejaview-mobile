@@ -93,4 +93,8 @@ private fun SplashFrames() {
     }
 }
 
-private fun reveal(elapsed: Float, start: Int, end: Int): Float = ((elapsed - start) / (end - start)).coerceIn(0f, 1f)
+private fun reveal(
+    elapsed: Float,
+    start: Int,
+    end: Int,
+): Float = ((elapsed - start) / (end - start)).coerceIn(0f, 1f)

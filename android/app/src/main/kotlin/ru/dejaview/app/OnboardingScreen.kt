@@ -25,12 +25,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import ru.dejaview.core.ui.R as UiR
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
+import ru.dejaview.core.ui.R as UiR
 
 @Composable
 internal fun OnboardingScreen(onContinue: () -> Unit) {

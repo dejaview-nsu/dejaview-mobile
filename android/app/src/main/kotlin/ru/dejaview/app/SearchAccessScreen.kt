@@ -29,7 +29,12 @@ import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.model.SearchMode
 
 @Composable
-internal fun SearchAccessScreen(mode: SearchMode, onLogin: () -> Unit, onRegister: () -> Unit, onTextSearch: () -> Unit) {
+internal fun SearchAccessScreen(
+    mode: SearchMode,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
+    onTextSearch: () -> Unit,
+) {
     val title =
         when (mode) {
             SearchMode.IMAGE -> R.string.search_access_image
