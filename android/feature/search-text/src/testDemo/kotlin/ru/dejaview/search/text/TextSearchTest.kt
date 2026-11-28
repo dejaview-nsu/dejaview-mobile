@@ -21,9 +21,9 @@ import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import ru.dejaview.search.text.data.FakeTextSearch
+import ru.dejaview.search.text.presentation.SearchStatus
 import ru.dejaview.search.text.presentation.TextSearchAction
 import ru.dejaview.search.text.presentation.TextSearchViewModel
-import ru.dejaview.search.text.presentation.SearchStatus
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
