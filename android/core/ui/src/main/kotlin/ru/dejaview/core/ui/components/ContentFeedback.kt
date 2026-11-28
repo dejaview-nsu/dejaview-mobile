@@ -90,6 +90,10 @@ fun ContentFeedback(
 
 @Composable
 private fun FeedbackIllustration(kind: FeedbackKind) {
+    if (kind == FeedbackKind.Empty || kind == FeedbackKind.Error) {
+        FilmStatusArtwork(empty = kind == FeedbackKind.Empty)
+        return
+    }
     val icon = kind.icon
     if (icon == null) {
         CircularProgressIndicator(color = DejaViewColors.accent)
@@ -98,7 +102,7 @@ private fun FeedbackIllustration(kind: FeedbackKind) {
 
     val tint = if (kind == FeedbackKind.InvalidFile || kind == FeedbackKind.Microphone) DejaViewColors.error else DejaViewColors.accent
     Surface(
-        modifier = Modifier.size(FEEDBACK_BADGE_SIZE),
+        modifier = Modifier.size(if (kind == FeedbackKind.Offline || kind == FeedbackKind.Microphone) 124.dp else FEEDBACK_BADGE_SIZE),
         shape = DejaViewShapes.pill,
         color = DejaViewColors.surface,
         border = BorderStroke(DejaViewShapes.outlineWidth, DejaViewColors.strongBorder),
