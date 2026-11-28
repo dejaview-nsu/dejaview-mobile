@@ -11,6 +11,12 @@ dependencies {
     implementation(project(":feature:search-api"))
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
+    add("prodImplementation", project(":core:network"))
+    add("prodImplementation", libs.serialization.json)
+    add("testProdImplementation", libs.junit)
+    add("testProdImplementation", libs.coroutines.test)
+    add("testProdImplementation", libs.mockwebserver)
+    add("testProdImplementation", libs.okhttp.tls)
     val testDemoImplementation by configurations
     testDemoImplementation(libs.junit)
     testDemoImplementation(libs.coroutines.test)
