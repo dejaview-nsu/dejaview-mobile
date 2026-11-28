@@ -9,7 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import ru.dejaview.core.ui.components.ContentFeedback
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.MovieCard
@@ -26,6 +28,7 @@ fun SearchResultsScreen(
     restoring: Boolean,
     onReturn: () -> Unit,
     onMovie: (MovieId) -> Unit,
+    onChooseMode: () -> Unit,
 ) {
     val back = stringResource(R.string.search_return)
     val hasMatches = !restoring && !completion?.results.isNullOrEmpty()
@@ -46,10 +49,32 @@ fun SearchResultsScreen(
                     )
                 }
             completion.results.isEmpty() ->
-                item { ContentFeedback(FeedbackKind.Empty, actionText = back, onAction = onReturn) }
+                item {
+                    val textSearch = completion.mode == SearchMode.TEXT
+                    ContentFeedback(
+                        FeedbackKind.Empty,
+                        actionText = if (textSearch) stringResource(R.string.search_refine_description) else back,
+                        onAction = onReturn,
+                        secondaryAction =
+                            if (textSearch) {
+                                {
+                                    TextButton(onClick = onChooseMode) { Text(stringResource(R.string.search_other_mode)) }
+                                }
+                            } else {
+                                null
+                            },
+                    )
+                }
             else -> {
-                val title = if (completion.mode == SearchMode.TEXT) R.string.search_results else R.string.search_movie_found
-                item { Text(stringResource(title), style = DejaViewType.heading) }
+                item {
+                    if (completion.mode == SearchMode.TEXT) {
+                        val count = completion.results.size
+                        Text(pluralStringResource(R.plurals.search_match_count, count, count), style = DejaViewType.heading)
+                        Text(completion.inputSummary, maxLines = 2, overflow = TextOverflow.Ellipsis, style = DejaViewType.body)
+                    } else {
+                        Text(stringResource(R.string.search_movie_found), style = DejaViewType.heading)
+                    }
+                }
                 itemsIndexed(completion.results) { index, movie ->
                     MovieCard(movie, highlighted = index == 0, onClick = { onMovie(movie.movieId) })
                 }
