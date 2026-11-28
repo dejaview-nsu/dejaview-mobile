@@ -1,4 +1,10 @@
 <resources>
+    <string name="search_home">На главную</string>
+    <string name="search_text_header">Поиск по описанию</string>
+    <string name="search_results_header">Результат</string>
+    <string name="search_prompt_place">Где и когда происходит действие</string>
+    <string name="search_prompt_person">Кто главный герой и чем он занят</string>
+    <string name="search_prompt_scene">Яркая сцена, реплика или песня</string>
     <string name="search_edit_query">Изменить</string>
     <plurals name="search_match_count">
         <item quantity="one">%d вариант</item>

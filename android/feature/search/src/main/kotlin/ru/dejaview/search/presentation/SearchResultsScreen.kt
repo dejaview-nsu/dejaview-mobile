@@ -31,6 +31,10 @@ fun SearchResultsScreen(
     onMovie: (MovieId) -> Unit,
     onChooseMode: () -> Unit,
 ) {
+    if (!restoring && completion != null && completion.results.isEmpty()) {
+        EmptySearchResults(completion, onReturn, onChooseMode)
+        return
+    }
     val back = stringResource(R.string.search_return)
     val hasMatches = !restoring && !completion?.results.isNullOrEmpty()
     LazyColumn(
@@ -47,23 +51,6 @@ fun SearchResultsScreen(
                         message = stringResource(R.string.search_repeat_message),
                         actionText = back,
                         onAction = onReturn,
-                    )
-                }
-            completion.results.isEmpty() ->
-                item {
-                    val textSearch = completion.mode == SearchMode.TEXT
-                    ContentFeedback(
-                        FeedbackKind.Empty,
-                        actionText = if (textSearch) stringResource(R.string.search_refine_description) else back,
-                        onAction = onReturn,
-                        secondaryAction =
-                            if (textSearch) {
-                                {
-                                    TextButton(onClick = onChooseMode) { Text(stringResource(R.string.search_other_mode)) }
-                                }
-                            } else {
-                                null
-                            },
                     )
                 }
             else -> {
