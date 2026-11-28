@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import ru.dejaview.core.ui.components.DejaViewMark
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchModeSelector
 import ru.dejaview.core.ui.theme.DejaViewSpacing
@@ -41,7 +44,10 @@ internal fun SearchHome(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.app_name), style = DejaViewType.title)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.small)) {
+                DejaViewMark(Modifier.size(26.dp))
+                Text(stringResource(R.string.app_name), style = DejaViewType.title)
+            }
             if (guest) {
                 TextButton(onClick = onLogin) { Text(stringResource(R.string.search_login)) }
             } else {
@@ -56,6 +62,7 @@ internal fun SearchHome(
         SearchModeSelector(
             selectedMode = if (guest) SearchMode.TEXT else null,
             onModeSelected = onMode,
+            accessLabel = if (guest) stringResource(R.string.search_mode_sign_in_badge) else null,
             subtitles =
                 mapOf(
                     SearchMode.TEXT to stringResource(if (guest) R.string.search_text_guest else R.string.search_text_hint),

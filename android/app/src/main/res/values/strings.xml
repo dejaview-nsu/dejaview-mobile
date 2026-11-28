@@ -1,4 +1,5 @@
 <resources>
+    <string name="search_mode_sign_in_badge">Вход</string>
     <string name="onboarding_title">Видели кусочек фильма? Найдём целиком</string>
     <string name="onboarding_body">Нарезка из ленты, скриншот, мелодия или пересказ друга — отправьте то, что осталось в памяти.</string>
     <string name="onboarding_text_mode">Описание</string>
