@@ -14,6 +14,7 @@ import ru.dejaview.contracts.session.SessionState
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.navigation.LoginRoute
 import ru.dejaview.navigation.MovieRoute
+import ru.dejaview.navigation.RegistrationRoute
 import ru.dejaview.navigation.ResultsRoute
 import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
@@ -48,7 +49,9 @@ internal fun SearchLoginDestination(
     if (login == null) {
         SearchLoginScreen(onCancel = cancel, onDemoLogin = services.demoLogin)
     } else {
-        login.Content(onCancel = cancel)
+        login.Content(onCancel = cancel, onRegister = {
+            if (nav.isActive(entry)) nav.navigate(RegistrationRoute)
+        })
     }
 }
 

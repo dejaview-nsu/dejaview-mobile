@@ -29,6 +29,7 @@ import ru.dejaview.navigation.MovieRoute
 import ru.dejaview.navigation.OnboardingRoute
 import ru.dejaview.navigation.OpeningRoute
 import ru.dejaview.navigation.ProfileRoute
+import ru.dejaview.navigation.RegistrationRoute
 import ru.dejaview.navigation.ResultsRoute
 import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
@@ -104,6 +105,11 @@ internal fun AppNavHost(
                 composable<LoginRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
                     SearchLoginDestination(navController, entry, entry.toRoute(), vm, searchServices)
+                }
+                composable<RegistrationRoute> { entry ->
+                    searchServices.login?.Registration {
+                        if (navController.isActive(entry)) navController.popBackStack()
+                    }
                 }
                 composable<LibraryRoute> { Text(stringResource(R.string.library_placeholder)) }
                 composable<ProfileRoute> {

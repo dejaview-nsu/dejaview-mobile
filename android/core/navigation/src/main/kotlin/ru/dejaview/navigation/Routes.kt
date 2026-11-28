@@ -28,6 +28,9 @@ data class LoginRoute(
 )
 
 @Serializable
+data object RegistrationRoute
+
+@Serializable
 data class LibraryRoute(
     val list: MovieList,
 )

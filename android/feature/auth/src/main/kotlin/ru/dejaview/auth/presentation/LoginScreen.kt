@@ -36,6 +36,7 @@ import ru.dejaview.feature.auth.R
 fun LoginScreen(
     service: LoginService,
     onCancel: () -> Unit,
+    onRegister: () -> Unit,
 ) {
     val model = viewModel<LoginViewModel> { LoginViewModel(service) }
     val state by model.state.collectAsStateWithLifecycle()
@@ -84,6 +85,7 @@ fun LoginScreen(
             if (state.captcha) challenge = true else model.submit(login, password, null)
         }, Modifier.fillMaxWidth(), enabled = !state.busy && state.waitSeconds == 0L && (!state.captcha || CHALLENGE_AVAILABLE))
         TextButton(onClick = cancel) { Text(stringResource(R.string.auth_cancel)) }
+        TextButton(onClick = onRegister, enabled = !state.busy) { Text(stringResource(R.string.registration_submit)) }
     }
     if (challenge) {
         CaptchaStep(onCancel = { challenge = false }, onToken = { token ->

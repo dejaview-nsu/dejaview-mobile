@@ -12,6 +12,7 @@ import ru.dejaview.auth.data.Identity
 import ru.dejaview.auth.data.LoginReply
 import ru.dejaview.auth.data.SessionGateway
 import ru.dejaview.auth.domain.LoginResult
+import ru.dejaview.auth.domain.RegistrationService
 import ru.dejaview.auth.presentation.DemoChallenge
 import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
@@ -29,6 +30,15 @@ internal val backendOrigin: String get() = "https://demo.invalid"
 internal object BackendModule {
     @Provides @Singleton
     fun gateway(): SessionGateway = DemoGateway()
+
+    @Provides
+    fun registration(): RegistrationService =
+        object : RegistrationService {
+            override suspend fun register(username: String, email: String, birthYear: Int, password: String): AppResult<Int> =
+                AppResult.Success(60)
+
+            override suspend fun resend(email: String): AppResult<Int> = AppResult.Success(60)
+        }
 
     @Provides @Singleton
     fun sessions(): SessionRegistry {
