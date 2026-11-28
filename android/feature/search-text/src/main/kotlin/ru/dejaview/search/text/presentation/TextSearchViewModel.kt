@@ -110,7 +110,10 @@ internal class TextSearchViewModel(
             }
     }
 
-    private suspend fun showFailure(submitted: TextSearchState, error: AppError) {
+    private suspend fun showFailure(
+        submitted: TextSearchState,
+        error: AppError,
+    ) {
         val wait = (error as? AppError.RateLimit)?.retryAfterSeconds ?: 0
         mutableState.value = submitted.copy(status = error.toSearchStatus(), retryInSeconds = wait)
         while (mutableState.value.retryInSeconds > 0) {

@@ -22,7 +22,13 @@ internal fun DescriptionHints(onHint: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(DejaViewSpacing.small),
         verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.extraSmall),
     ) {
-        val labels = listOf(R.string.text_search_hint_place, R.string.text_search_hint_character, R.string.text_search_hint_year, R.string.text_search_hint_scene)
+        val labels =
+            listOf(
+                R.string.text_search_hint_place,
+                R.string.text_search_hint_character,
+                R.string.text_search_hint_year,
+                R.string.text_search_hint_scene,
+            )
         labels.forEach { label ->
             val hint = stringResource(label)
             SuggestionChip(

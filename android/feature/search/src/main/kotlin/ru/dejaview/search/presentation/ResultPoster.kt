@@ -19,7 +19,10 @@ internal fun String?.httpsPoster(): String? =
     this?.takeIf { url -> Uri.parse(url).let { it.scheme == "https" && !it.host.isNullOrBlank() } }
 
 @Composable
-internal fun ResultPoster(url: String?, modifier: Modifier = Modifier) {
+internal fun ResultPoster(
+    url: String?,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Icon(
             painterResource(R.drawable.dv_poster_placeholder),

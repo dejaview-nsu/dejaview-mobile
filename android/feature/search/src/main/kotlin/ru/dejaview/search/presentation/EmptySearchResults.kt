@@ -12,7 +12,11 @@ import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 
 @Composable
-internal fun EmptySearchResults(completion: SearchCompletion, onEdit: () -> Unit, onChooseMode: () -> Unit) {
+internal fun EmptySearchResults(
+    completion: SearchCompletion,
+    onEdit: () -> Unit,
+    onChooseMode: () -> Unit,
+) {
     val isText = completion.mode == SearchMode.TEXT
     SearchStatusPage(
         FeedbackKind.Empty,

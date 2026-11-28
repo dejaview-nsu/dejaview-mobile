@@ -69,7 +69,11 @@ internal fun TextSearchScreen(
             SearchHeading(onBack)
             DescriptionField(state, onValueChange = { onAction(TextSearchAction.Edit(it)) })
             DescriptionHints { hint ->
-                val prefix = state.query.trimEnd().takeIf(String::isNotEmpty)?.plus(" ") ?: ""
+                val prefix =
+                    state.query
+                        .trimEnd()
+                        .takeIf(String::isNotEmpty)
+                        ?.plus(" ") ?: ""
                 onAction(TextSearchAction.Edit(prefix + hint + " "))
             }
         }

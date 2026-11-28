@@ -9,9 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.pluralStringResource
 import ru.dejaview.core.ui.components.FeedbackKind
 import ru.dejaview.core.ui.components.MovieCard
 import ru.dejaview.core.ui.components.ScreenHeader
@@ -84,7 +84,10 @@ fun SearchResultsScreen(
 }
 
 @Composable
-private fun MatchedResultsHeader(completion: SearchCompletion, onReturn: () -> Unit) {
+private fun MatchedResultsHeader(
+    completion: SearchCompletion,
+    onReturn: () -> Unit,
+) {
     if (completion.mode == SearchMode.TEXT) {
         val count = completion.results.size
         ScreenHeader(pluralStringResource(R.plurals.search_match_count, count, count), onReturn)
@@ -94,7 +97,10 @@ private fun MatchedResultsHeader(completion: SearchCompletion, onReturn: () -> U
 }
 
 @Composable
-internal fun QuerySummary(query: String, onEdit: () -> Unit) {
+internal fun QuerySummary(
+    query: String,
+    onEdit: () -> Unit,
+) {
     androidx.compose.material3.AssistChip(
         onClick = onEdit,
         label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
