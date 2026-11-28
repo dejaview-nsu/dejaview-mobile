@@ -1,9 +1,14 @@
 package ru.dejaview.search.text.reference.data
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import okhttp3.Call
+import okhttp3.EventListener
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -13,6 +18,7 @@ import okhttp3.tls.HeldCertificate
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import ru.dejaview.contracts.AppError
@@ -21,10 +27,12 @@ import ru.dejaview.model.MovieSummary
 import ru.dejaview.network.BackendClient
 import java.net.InetAddress
 import java.net.Proxy
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class HttpTextSearchTest {
     private val server = MockWebServer()
+    private val cancelled = CountDownLatch(1)
     private lateinit var search: HttpTextSearch
 
     @Before
@@ -35,9 +43,14 @@ class HttpTextSearchTest {
         server.useHttps(tls.sslSocketFactory(), false)
         server.start(InetAddress.getByName("127.0.0.1"), 0)
         val http =
-            OkHttpClient.Builder()
+            OkHttpClient
+                .Builder()
                 .proxy(Proxy.NO_PROXY)
-                .sslSocketFactory(trust.sslSocketFactory(), trust.trustManager)
+                .eventListener(
+                    object : EventListener() {
+                        override fun canceled(call: Call) = cancelled.countDown()
+                    },
+                ).sslSocketFactory(trust.sslSocketFactory(), trust.trustManager)
                 .build()
         search = HttpTextSearch(BackendClient("https://127.0.0.1:${server.port}", http))
     }
@@ -66,12 +79,13 @@ class HttpTextSearchTest {
         runBlocking {
             respond("""{"results":[]}""")
             assertEquals(AppResult.Success(emptyList<MovieSummary>()), search.search("abc"))
-            val broken = listOf(
-                "{}",
-                """{"results":[{"movie_id":4,"title":"Пусто","year":null,"poster_url":null}]}""",
-                """{"results":[${NULL_CARD.replace("\"movie_id\":4", "\"movie_id\":\"4\"")}]}""",
-                """{"results":[${List(11) { NULL_CARD }.joinToString(",")}]}""",
-            )
+            val broken =
+                listOf(
+                    "{}",
+                    """{"results":[{"movie_id":4,"title":"Пусто","year":null,"poster_url":null}]}""",
+                    """{"results":[${NULL_CARD.replace("\"movie_id\":4", "\"movie_id\":\"4\"")}]}""",
+                    """{"results":[${List(11) { NULL_CARD }.joinToString(",")}]}""",
+                )
             broken.forEach { body ->
                 respond(body)
                 assertEquals(AppResult.Failure(AppError.Unknown("INVALID_RESPONSE")), search.search("abc"))
@@ -87,8 +101,21 @@ class HttpTextSearchTest {
             server.enqueue(MockResponse().setResponseCode(429).setHeader("Retry-After", "12").setBody("<html>Rate limit</html>"))
             assertEquals(AppResult.Failure(AppError.RateLimit(12)), search.search("abc"))
 
-            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
             assertEquals(AppResult.Failure(AppError.Offline()), search.search("abc"))
+        }
+
+    @Test
+    fun cancelsTheInFlightHttpCall() =
+        runBlocking {
+            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+            val attempt = async(Dispatchers.Default) { search.search("abc") }
+            try {
+                checkNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            } finally {
+                attempt.cancelAndJoin()
+            }
+            assertTrue(cancelled.await(3, TimeUnit.SECONDS))
         }
 
     private fun respond(json: String) {
@@ -96,7 +123,9 @@ class HttpTextSearchTest {
     }
 
     private companion object {
-        const val FULL_CARD = """{"movie_id":42,"title":"Пример","year":2024,"poster_url":"https://example.com/p.png","overview":"Описание","extra":true}"""
+        const val FULL_CARD =
+            """{"movie_id":42,"title":"Пример","year":2024,""" +
+                """"poster_url":"https://example.com/p.png","overview":"Описание","extra":true}"""
         const val NULL_CARD = """{"movie_id":4,"title":"Пусто","year":null,"poster_url":null,"overview":null}"""
     }
 }

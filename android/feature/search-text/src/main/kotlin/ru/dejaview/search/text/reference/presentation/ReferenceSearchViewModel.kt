@@ -12,9 +12,9 @@ import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
 import ru.dejaview.search.text.reference.domain.MAX_QUERY_LENGTH
 import ru.dejaview.search.text.reference.domain.MIN_QUERY_LENGTH
+import ru.dejaview.search.text.reference.domain.ReferenceSearch
 import ru.dejaview.search.text.reference.domain.boundedDraft
 import ru.dejaview.search.text.reference.domain.queryLength
 import ru.dejaview.search.text.reference.domain.trimQuery
@@ -43,7 +43,6 @@ internal sealed interface SearchStatus {
     data class RateLimited(
         val retryAfterSeconds: Long?,
     ) : SearchStatus
-
 }
 
 internal sealed interface ReferenceSearchAction {

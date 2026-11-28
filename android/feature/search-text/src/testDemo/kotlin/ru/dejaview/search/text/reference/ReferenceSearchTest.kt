@@ -63,13 +63,14 @@ class ReferenceSearchTest {
     fun validatesTrimmedBoundariesAndSendsTheSameUnicodeQuery() =
         runTest {
             val requests = mutableListOf<String>()
-            val vm = ReferenceSearchViewModel(
-                { query ->
-                    requests += query
-                    AppResult.Success(emptyList())
-                },
-                SavedStateHandle(),
-            )
+            val vm =
+                ReferenceSearchViewModel(
+                    { query ->
+                        requests += query
+                        AppResult.Success(emptyList())
+                    },
+                    SavedStateHandle(),
+                )
             val invalid = listOf("", "\u0085\u00A0\u3000", "🎬a", "a".repeat(251), "a".repeat(250) + " ".repeat(300) + "z")
             invalid.forEach { query ->
                 vm.edit(query)
@@ -104,7 +105,14 @@ class ReferenceSearchTest {
             vm.onAction(ReferenceSearchAction.Submit, delivered::add)
             advanceUntilIdle()
             assertEquals(listOf(1, 0), delivered.map { it.results.size })
-            assertEquals("Сигнал с далёкой орбиты", delivered.first().results.single().title)
+            assertEquals(
+                "Сигнал с далёкой орбиты",
+                delivered
+                    .first()
+                    .results
+                    .single()
+                    .title,
+            )
             assertEquals(SearchMode.TEXT, delivered.first().mode)
             assertEquals("космос", delivered.first().inputSummary)
             assertEquals(2, delivered.map { it.requestId }.distinct().size)

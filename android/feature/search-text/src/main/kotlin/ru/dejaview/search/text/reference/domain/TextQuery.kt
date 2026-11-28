@@ -6,13 +6,14 @@ private const val MAX_DRAFT_LENGTH = MAX_QUERY_LENGTH + 1
 
 internal fun String.queryLength() = codePointCount(0, length)
 
-internal fun String.trimQuery() = trim { character ->
-    // Unicode White_Space, as used by the backend. Kotlin's trim also removes U+001C–U+001F.
-    character in '\u0009'..'\u000D' || character == ' ' || character == '\u0085' ||
-        character == '\u00A0' || character == '\u1680' || character in '\u2000'..'\u200A' ||
-        character == '\u2028' || character == '\u2029' || character == '\u202F' ||
-        character == '\u205F' || character == '\u3000'
-}
+internal fun String.trimQuery() =
+    trim { character ->
+        // Unicode White_Space, as used by the backend. Kotlin's trim also removes U+001C–U+001F.
+        character in '\u0009'..'\u000D' || character == ' ' || character == '\u0085' ||
+            character == '\u00A0' || character == '\u1680' || character in '\u2000'..'\u200A' ||
+            character == '\u2028' || character == '\u2029' || character == '\u202F' ||
+            character == '\u205F' || character == '\u3000'
+    }
 
 internal fun String.boundedDraft(): String {
     if (queryLength() <= MAX_DRAFT_LENGTH) return this
