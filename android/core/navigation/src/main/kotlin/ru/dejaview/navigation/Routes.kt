@@ -13,6 +13,9 @@ data class SearchRoute(
 )
 
 @Serializable
+data class SearchAccessRoute(val mode: SearchMode)
+
+@Serializable
 data class ResultsRoute(
     val requestId: RequestId,
 )

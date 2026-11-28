@@ -31,6 +31,7 @@ import ru.dejaview.navigation.OpeningRoute
 import ru.dejaview.navigation.ProfileRoute
 import ru.dejaview.navigation.RegistrationRoute
 import ru.dejaview.navigation.ResultsRoute
+import ru.dejaview.navigation.SearchAccessRoute
 import ru.dejaview.navigation.SearchHomeRoute
 import ru.dejaview.navigation.SearchRoute
 import ru.dejaview.search.api.SearchModalityUi
@@ -89,8 +90,30 @@ internal fun AppNavHost(
                             if (navController.isActive(entry)) navController.navigate(LoginRoute())
                         },
                     ) { mode ->
-                        if (navController.isActive(entry)) navController.openSearch(SearchRoute(mode), vm)
+                        if (navController.isActive(entry)) {
+                            if (vm.canOpen(mode)) navController.openSearch(SearchRoute(mode), vm)
+                            else navController.navigate(SearchAccessRoute(mode))
+                        }
                     }
+                }
+                composable<SearchAccessRoute> { entry ->
+                    val route = entry.toRoute<SearchAccessRoute>()
+                    val vm = searchViewModel(searchServices, navController, entry)
+                    val proceed = { mode: SearchMode, register: Boolean ->
+                        if (navController.isActive(entry)) {
+                            navController.popBackStack()
+                            navController.openSearch(SearchRoute(mode), vm)
+                            if (register && !vm.canOpen(mode) && searchServices.login != null) {
+                                navController.navigate(RegistrationRoute)
+                            }
+                        }
+                    }
+                    SearchAccessScreen(
+                        route.mode,
+                        onLogin = { proceed(route.mode, false) },
+                        onRegister = { proceed(route.mode, true) },
+                        onTextSearch = { proceed(SearchMode.TEXT, false) },
+                    )
                 }
                 composable<SearchRoute> { entry ->
                     val route = entry.toRoute<SearchRoute>()
