@@ -1,6 +1,7 @@
 <resources>
     <string name="dv_back">Назад</string>
     <string name="dv_close">Закрыть</string>
+    <string name="dv_search_home">На главную</string>
     <string name="dv_mode_text">Описание</string>
     <string name="dv_mode_image">Кадр</string>
     <string name="dv_mode_video">Видео</string>
