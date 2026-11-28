@@ -35,7 +35,10 @@ import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.core.ui.R as UiR
 
 @Composable
-internal fun OnboardingScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
+internal fun OnboardingScreen(
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
+) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).heightIn(min = maxHeight).padding(vertical = DejaViewSpacing.extraLarge),
