@@ -61,17 +61,19 @@ internal class AudioDevices(
         return file
     }
 
-    fun recordingAmplitude(): Int = try {
-        recorder?.maxAmplitude ?: 0
-    } catch (_: IllegalStateException) {
-        0
-    }
+    fun recordingAmplitude(): Int =
+        try {
+            recorder?.maxAmplitude ?: 0
+        } catch (_: IllegalStateException) {
+            0
+        }
 
-    fun playbackPositionMs(): Int = try {
-        player?.currentPosition ?: 0
-    } catch (_: IllegalStateException) {
-        0
-    }
+    fun playbackPositionMs(): Int =
+        try {
+            player?.currentPosition ?: 0
+        } catch (_: IllegalStateException) {
+            0
+        }
 
     fun play(
         id: String,

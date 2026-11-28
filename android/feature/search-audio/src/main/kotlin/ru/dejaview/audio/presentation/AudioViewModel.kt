@@ -56,7 +56,10 @@ internal class AudioViewModel(
 
     fun pick(uri: Uri) = load { store.importDocument(uri) }
 
-    private fun load(waveform: List<Float> = emptyList(), source: suspend () -> AppResult<PreparedMedia>) {
+    private fun load(
+        waveform: List<Float> = emptyList(),
+        source: suspend () -> AppResult<PreparedMedia>,
+    ) {
         resetOperation()
         mutable.update { it.copy(phase = AudioPhase.Importing, error = null) }
         operation =
@@ -122,12 +125,13 @@ internal class AudioViewModel(
         try {
             devices.play(draft.id, { mutable.update { it.copy(phase = AudioPhase.Ready) } }, { fail(AppError.InvalidFile("PLAYBACK")) })
             mutable.update { it.copy(phase = AudioPhase.Playing, error = null, elapsedMs = 0) }
-            operation = viewModelScope.launch {
-                while (mutable.value.phase == AudioPhase.Playing) {
-                    mutable.update { it.copy(elapsedMs = devices.playbackPositionMs().toLong()) }
-                    delay(100)
+            operation =
+                viewModelScope.launch {
+                    while (mutable.value.phase == AudioPhase.Playing) {
+                        mutable.update { it.copy(elapsedMs = devices.playbackPositionMs().toLong()) }
+                        delay(100)
+                    }
                 }
-            }
         } catch (_: IOException) {
             interrupt()
             fail(AppError.InvalidFile("PLAYBACK"))
@@ -139,18 +143,19 @@ internal class AudioViewModel(
 
     private fun monitorRecording() {
         val started = SystemClock.elapsedRealtime()
-        operation = viewModelScope.launch {
-            while (mutable.value.phase == AudioPhase.Recording) {
-                val amplitude = (devices.recordingAmplitude() / 32767f).coerceIn(0f, 1f)
-                mutable.update {
-                    it.copy(
-                        elapsedMs = SystemClock.elapsedRealtime() - started,
-                        recordingLevels = (it.recordingLevels + amplitude).takeLast(50),
-                    )
+        operation =
+            viewModelScope.launch {
+                while (mutable.value.phase == AudioPhase.Recording) {
+                    val amplitude = (devices.recordingAmplitude() / 32767f).coerceIn(0f, 1f)
+                    mutable.update {
+                        it.copy(
+                            elapsedMs = SystemClock.elapsedRealtime() - started,
+                            recordingLevels = (it.recordingLevels + amplitude).takeLast(50),
+                        )
+                    }
+                    delay(200)
                 }
-                delay(200)
             }
-        }
     }
 
     fun submit() {
