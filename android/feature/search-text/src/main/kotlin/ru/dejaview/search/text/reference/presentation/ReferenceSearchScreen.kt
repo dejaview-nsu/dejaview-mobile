@@ -29,6 +29,8 @@ import ru.dejaview.core.ui.theme.DejaViewColors
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.searchtext.R
+import ru.dejaview.search.text.reference.domain.MAX_QUERY_LENGTH
+import ru.dejaview.search.text.reference.domain.MIN_QUERY_LENGTH
 
 private const val DESCRIPTION_LINES = 6
 

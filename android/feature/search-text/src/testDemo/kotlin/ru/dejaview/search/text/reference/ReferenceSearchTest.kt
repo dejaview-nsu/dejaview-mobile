@@ -60,6 +60,34 @@ class ReferenceSearchTest {
         }
 
     @Test
+    fun validatesTrimmedBoundariesAndSendsTheSameUnicodeQuery() =
+        runTest {
+            val requests = mutableListOf<String>()
+            val vm = ReferenceSearchViewModel(
+                { query ->
+                    requests += query
+                    AppResult.Success(emptyList())
+                },
+                SavedStateHandle(),
+            )
+            val invalid = listOf("", "\u0085\u00A0\u3000", "🎬a", "a".repeat(251), "a".repeat(250) + " ".repeat(300) + "z")
+            invalid.forEach { query ->
+                vm.edit(query)
+                assertFalse(vm.state.value.canSubmit)
+                vm.submit()
+            }
+            val valid = listOf("Сюж", "A🎬Z", "🎬".repeat(250), "\u001Cяa")
+            valid.forEach { query ->
+                vm.edit("\u0085\u00A0" + query + "\u202F\u3000")
+                assertEquals(query.codePointCount(0, query.length), vm.state.value.characterCount)
+                assertTrue(vm.state.value.canSubmit)
+                vm.submit()
+                advanceUntilIdle()
+            }
+            assertEquals(valid, requests)
+        }
+
+    @Test
     fun reportsLoadingThenResultsAndEmpty() =
         runTest {
             val vm = ReferenceSearchViewModel(FakeReferenceSearch(), SavedStateHandle())

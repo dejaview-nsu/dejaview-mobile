@@ -14,26 +14,22 @@ import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import ru.dejaview.search.text.reference.domain.ReferenceSearch
+import ru.dejaview.search.text.reference.domain.MAX_QUERY_LENGTH
+import ru.dejaview.search.text.reference.domain.MIN_QUERY_LENGTH
+import ru.dejaview.search.text.reference.domain.boundedDraft
+import ru.dejaview.search.text.reference.domain.queryLength
+import ru.dejaview.search.text.reference.domain.trimQuery
 import java.time.Instant
 import java.util.UUID
 
-internal const val MIN_QUERY_LENGTH = 3
-internal const val MAX_QUERY_LENGTH = 250
-private const val MAX_DRAFT_LENGTH = MAX_QUERY_LENGTH + 1
 private const val DRAFT_KEY = "reference-search-query"
 
 internal data class ReferenceSearchState(
     val query: String = "",
     val status: SearchStatus = SearchStatus.Editing,
 ) {
-    val characterCount: Int get() = query.codePointCount(0, query.length)
-
-    val canSubmit: Boolean
-        get() {
-            val trimmed = query.trim()
-            return trimmed.codePointCount(0, trimmed.length) >= MIN_QUERY_LENGTH &&
-                characterCount <= MAX_QUERY_LENGTH && status != SearchStatus.Loading
-        }
+    val characterCount: Int get() = query.trimQuery().queryLength()
+    val canSubmit: Boolean get() = characterCount in MIN_QUERY_LENGTH..MAX_QUERY_LENGTH && status != SearchStatus.Loading
 }
 
 internal sealed interface SearchStatus {
@@ -66,7 +62,7 @@ internal class ReferenceSearchViewModel(
     private val search: ReferenceSearch,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(ReferenceSearchState(query = savedState.get<String>(DRAFT_KEY).orEmpty()))
+    private val mutableState = MutableStateFlow(ReferenceSearchState(query = savedState.get<String>(DRAFT_KEY).orEmpty().boundedDraft()))
     val state = mutableState.asStateFlow()
     private var request: Job? = null
 
@@ -83,7 +79,7 @@ internal class ReferenceSearchViewModel(
 
     private fun edit(text: String) {
         request?.cancel()
-        val query = boundedDraft(text)
+        val query = text.boundedDraft()
         savedState[DRAFT_KEY] = query
         mutableState.value = ReferenceSearchState(query = query)
     }
@@ -93,19 +89,13 @@ internal class ReferenceSearchViewModel(
         mutableState.value = mutableState.value.copy(status = SearchStatus.Editing)
     }
 
-    private fun boundedDraft(query: String): String {
-        // Keep one extra code point so the field can show the limit error without saving a large paste.
-        if (query.codePointCount(0, query.length) <= MAX_DRAFT_LENGTH) return query
-        return query.substring(0, query.offsetByCodePoints(0, MAX_DRAFT_LENGTH))
-    }
-
     private fun submit(onCompleted: ((SearchCompletion) -> Unit)?) {
         val submitted = mutableState.value
         if (!submitted.canSubmit) return
         mutableState.value = submitted.copy(status = SearchStatus.Loading)
         request =
             viewModelScope.launch {
-                val query = submitted.query.trim()
+                val query = submitted.query.trimQuery()
                 val result = search.search(query)
                 ensureActive()
                 if (result is AppResult.Success && onCompleted != null) {
