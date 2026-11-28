@@ -1,4 +1,6 @@
 <resources>
+    <string name="search_guest_register">Создайте аккаунт за минуту</string>
+    <string name="search_guest_register_detail">Поиск по кадру, видео и звуку, списки и оценки.</string>
     <string name="search_fallback_home">На главную</string>
     <string name="search_fallback_detail">В этой сборке можно искать по описанию или звуку.</string>
     <string name="search_access_image">Поиск по кадру доступен после входа</string>

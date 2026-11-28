@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,8 @@ import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchModeSelector
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.core.ui.theme.DejaViewType
+import ru.dejaview.core.ui.theme.DejaViewColors
+import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import ru.dejaview.navigation.SearchRoute
@@ -32,6 +35,7 @@ import ru.dejaview.search.api.SearchModalityUi
 internal fun SearchHome(
     guest: Boolean,
     onLogin: () -> Unit,
+    onRegister: (() -> Unit)?,
     onProfile: () -> Unit,
     onMode: (SearchMode) -> Unit,
 ) {
@@ -71,6 +75,23 @@ internal fun SearchHome(
                     SearchMode.AUDIO to stringResource(R.string.search_audio_hint),
                 ),
         )
+        if (guest && onRegister != null) {
+            Surface(
+                onClick = onRegister,
+                modifier = Modifier.fillMaxWidth(),
+                shape = DejaViewShapes.card,
+                color = DejaViewColors.surface,
+            ) {
+                Column(Modifier.padding(DejaViewSpacing.large), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.small)) {
+                    Text(stringResource(R.string.search_guest_register), style = DejaViewType.title)
+                    Text(
+                        stringResource(R.string.search_guest_register_detail),
+                        color = DejaViewColors.secondaryText,
+                        style = DejaViewType.bodySmall,
+                    )
+                }
+            }
+        }
     }
 }
 

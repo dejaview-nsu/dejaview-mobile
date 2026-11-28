@@ -86,6 +86,15 @@ internal fun AppNavHost(
                     SearchHome(
                         guest = session == SessionState.Guest || session == SessionState.Expired,
                         onProfile = { if (navController.isActive(entry)) navController.navigate(ProfileRoute) },
+                        onRegister =
+                            searchServices.login?.let {
+                                {
+                                    if (navController.isActive(entry)) {
+                                        navController.navigate(LoginRoute())
+                                        navController.navigate(RegistrationRoute)
+                                    }
+                                }
+                            },
                         onLogin = {
                             if (navController.isActive(entry)) navController.navigate(LoginRoute())
                         },
