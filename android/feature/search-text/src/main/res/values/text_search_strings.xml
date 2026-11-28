@@ -1,0 +1,15 @@
+<resources>
+    <string name="text_search_title">Поиск по описанию</string>
+    <string name="text_search_back">Назад</string>
+    <string name="text_search_heading">Что вы помните о фильме?</string>
+    <string name="text_search_explanation">Опишите сцену, сюжет или героев своими словами.</string>
+    <string name="text_search_description">Описание фильма</string>
+    <string name="text_search_example">Например, пилот отправляется в космос</string>
+    <string name="text_search_count">%1$d / %2$d · От %3$d символов</string>
+    <string name="text_search_submit">Найти фильм</string>
+    <string name="text_search_clear">Очистить описание</string>
+    <string name="text_search_rate_limit">Слишком много запросов</string>
+    <string name="text_search_retry_after">Повторите поиск через %1$d с.</string>
+    <string name="text_search_retry_later">Подождите немного и повторите поиск.</string>
+    <string name="text_search_home">На главную</string>
+</resources>

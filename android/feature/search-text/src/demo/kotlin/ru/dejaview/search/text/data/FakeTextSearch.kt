@@ -1,12 +1,12 @@
-package ru.dejaview.search.text.reference.data
+package ru.dejaview.search.text.data
 
 import kotlinx.coroutines.delay
 import ru.dejaview.contracts.AppResult
 import ru.dejaview.model.MovieSummary
-import ru.dejaview.search.text.reference.domain.ReferenceSearch
+import ru.dejaview.search.text.domain.TextSearch
 import kotlin.time.Duration.Companion.milliseconds
 
-internal class FakeReferenceSearch : ReferenceSearch {
+internal class FakeTextSearch : TextSearch {
     override suspend fun search(query: String): AppResult<List<MovieSummary>> {
         delay(SIMULATED_SEARCH_DELAY)
         val words = query.split(' ').filter { it.length >= MIN_SEARCH_WORD_LENGTH }

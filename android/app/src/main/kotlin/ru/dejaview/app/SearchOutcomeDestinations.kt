@@ -79,6 +79,9 @@ internal fun SearchResultsDestination(
             onMovie = { movieId ->
                 if (nav.isActive(entry)) nav.navigate(MovieRoute(movieId))
             },
+            onChooseMode = {
+                if (nav.isActive(entry)) nav.popBackStack<SearchHomeRoute>(inclusive = false)
+            },
         )
     }
 }

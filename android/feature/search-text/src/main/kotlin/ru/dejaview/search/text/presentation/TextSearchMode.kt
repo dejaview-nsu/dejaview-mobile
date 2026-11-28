@@ -1,0 +1,64 @@
+package ru.dejaview.search.text.presentation
+
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoMap
+import ru.dejaview.model.SearchCompletion
+import ru.dejaview.model.SearchMode
+import ru.dejaview.search.api.SearchModalityUi
+import ru.dejaview.search.api.SearchModeKey
+import ru.dejaview.search.text.domain.TextSearch
+import javax.inject.Inject
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal interface TextSearchModule {
+    @Binds @IntoMap
+    @SearchModeKey(SearchMode.TEXT)
+    fun mode(text: TextSearchMode): SearchModalityUi
+}
+
+internal class TextSearchMode
+    @Inject
+    constructor(
+        private val search: TextSearch,
+    ) : SearchModalityUi {
+        override val mode = SearchMode.TEXT
+
+        @Composable
+        override fun Content(
+            draftId: String?,
+            onCompleted: (SearchCompletion) -> Unit,
+            modifier: Modifier,
+        ) {
+            val model = viewModel { TextSearchViewModel(search, createSavedStateHandle()) }
+            val state by model.state.collectAsStateWithLifecycle()
+            val callback by rememberUpdatedState(onCompleted)
+            val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            val cancel = model::cancelSearch
+            BackHandler(enabled = state.status == SearchStatus.Loading, onBack = cancel)
+            LifecycleResumeEffect(model) {
+                onPauseOrDispose {
+                    if (model.state.value.status == SearchStatus.Loading) cancel()
+                }
+            }
+            TextSearchScreen(
+                state,
+                onAction = { action -> model.onAction(action) { callback(it) } },
+                onBack = { backDispatcher?.onBackPressed() },
+                modifier = modifier,
+            )
+        }
+    }

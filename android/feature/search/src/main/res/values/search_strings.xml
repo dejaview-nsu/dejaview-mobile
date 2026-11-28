@@ -1,8 +1,13 @@
 <resources>
-    <string name="search_results">Результаты поиска</string>
+    <plurals name="search_match_count">
+        <item quantity="one">%d вариант</item>
+        <item quantity="other">Совпадений — %d</item>
+    </plurals>
     <string name="search_movie_found">Найден фильм</string>
     <string name="search_result_unavailable">Выдача недоступна</string>
     <string name="search_repeat_message">Запустите поиск ещё раз</string>
     <string name="search_return">Вернуться к поиску</string>
     <string name="search_wrong_movie">Это не тот фильм</string>
+    <string name="search_refine_description">Уточнить описание</string>
+    <string name="search_other_mode">Искать по кадру или звуку</string>
 </resources>
