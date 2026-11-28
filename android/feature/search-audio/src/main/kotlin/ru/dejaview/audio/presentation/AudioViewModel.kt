@@ -33,6 +33,7 @@ internal data class AudioState(
     val elapsedMs: Long = 0,
     val recordingLevels: List<Float> = emptyList(),
     val waveform: List<Float> = emptyList(),
+    val retryInSeconds: Long = 0,
     val error: AppError? = null,
     val completion: SearchCompletion? = null,
 )
@@ -155,7 +156,7 @@ internal class AudioViewModel(
     fun submit() {
         val initial = mutable.value
         val draft = initial.draft ?: return
-        if (initial.phase != AudioPhase.Ready || initial.completion != null) return
+        if (initial.phase != AudioPhase.Ready || initial.completion != null || initial.retryInSeconds > 0) return
         val attempt = ++revision
         mutable.update { it.copy(phase = AudioPhase.Uploading, sent = 0, error = null) }
         operation =
@@ -191,7 +192,15 @@ internal class AudioViewModel(
                                     ),
                             )
                     }
-                    is AppResult.Failure -> fail(result.error)
+                    is AppResult.Failure -> {
+                        fail(result.error)
+                        val wait = (result.error as? AppError.RateLimit)?.retryAfterSeconds ?: 0
+                        mutable.update { it.copy(retryInSeconds = wait) }
+                        while (mutable.value.retryInSeconds > 0) {
+                            delay(1000)
+                            mutable.update { it.copy(retryInSeconds = it.retryInSeconds - 1) }
+                        }
+                    }
                 }
             }
     }
@@ -217,7 +226,7 @@ internal class AudioViewModel(
         revision++
         operation?.cancel()
         devices.close()
-        mutable.update { it.copy(phase = AudioPhase.Ready, sent = 0) }
+        mutable.update { it.copy(phase = AudioPhase.Ready, sent = 0, retryInSeconds = 0) }
     }
 
     private fun fail(error: AppError) {

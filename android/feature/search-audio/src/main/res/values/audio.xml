@@ -1,4 +1,6 @@
 <resources>
+    <string name="audio_retry">Повторить</string>
+    <string name="audio_retry_after">Повторите поиск через %1$d с.</string>
     <string name="audio_preview_ready">Фрагмент готов</string>
     <string name="audio_preview_title">Проверьте запись</string>
     <string name="audio_preview_tip">Послушайте фрагмент. Если слышно в основном шум или чужой голос — перезапишите.</string>
