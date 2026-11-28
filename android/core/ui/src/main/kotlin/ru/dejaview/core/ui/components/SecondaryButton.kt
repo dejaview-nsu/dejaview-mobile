@@ -12,18 +12,24 @@ import ru.dejaview.core.ui.theme.DejaViewShapes
 import ru.dejaview.core.ui.theme.DejaViewType
 
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     Button(
         onClick = onClick,
         modifier = modifier.heightIn(min = 52.dp),
         enabled = enabled,
         shape = DejaViewShapes.pill,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = DejaViewColors.elevated,
-            contentColor = DejaViewColors.text,
-            disabledContainerColor = DejaViewColors.surface,
-            disabledContentColor = DejaViewColors.mutedText,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = DejaViewColors.elevated,
+                contentColor = DejaViewColors.text,
+                disabledContainerColor = DejaViewColors.surface,
+                disabledContentColor = DejaViewColors.mutedText,
+            ),
     ) {
         Text(text, style = DejaViewType.button)
     }

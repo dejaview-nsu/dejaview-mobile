@@ -15,7 +15,12 @@ import ru.dejaview.core.ui.R
 import ru.dejaview.core.ui.theme.DejaViewType
 
 @Composable
-fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, close: Boolean = false) {
+fun ScreenHeader(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    close: Boolean = false,
+) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack) {
             Icon(
