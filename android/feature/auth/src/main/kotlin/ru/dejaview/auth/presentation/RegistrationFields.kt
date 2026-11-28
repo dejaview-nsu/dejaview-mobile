@@ -30,6 +30,7 @@ internal fun RegistrationFields(state: RegistrationState, onSubmit: (String, Str
     val year = birthYear.toIntOrNull()
     val yearValid = year != null && year in 1900..Year.now().value
     val mismatched = repeatPassword.isNotEmpty() && password != repeatPassword
+    val complete = yearValid && username.isNotBlank() && email.isNotBlank() && password.isNotEmpty() && password == repeatPassword
     Text(stringResource(R.string.registration_intro), color = DejaViewColors.secondaryText, style = DejaViewType.body)
     DejaViewTextField(username, { username = it }, stringResource(R.string.registration_username), enabled = enabled)
     DejaViewTextField(
@@ -57,6 +58,6 @@ internal fun RegistrationFields(state: RegistrationState, onSubmit: (String, Str
         stringResource(R.string.registration_submit),
         { if (year != null) onSubmit(username, email, year, password) },
         Modifier.fillMaxWidth(),
-        enabled = enabled && yearValid && username.isNotBlank() && email.isNotBlank() && password.isNotEmpty() && password == repeatPassword,
+        enabled = enabled && complete,
     )
 }

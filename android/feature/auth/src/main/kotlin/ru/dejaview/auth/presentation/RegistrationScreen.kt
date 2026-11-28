@@ -27,12 +27,26 @@ import ru.dejaview.core.ui.theme.DejaViewType
 import ru.dejaview.feature.auth.R
 
 @Composable
-internal fun RegistrationScreen(service: RegistrationService, onReturnToLogin: () -> Unit) {
+internal fun RegistrationScreen(
+    service: RegistrationService,
+    onReturnToLogin: () -> Unit,
+) {
     val model = viewModel { RegistrationViewModel(service) }
     val state by model.state.collectAsStateWithLifecycle()
     Column(Modifier.imePadding().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(DejaViewSpacing.large)) {
         val address = state.confirmedAddress
-        ScreenHeader(stringResource(if (address == null) R.string.registration_title else R.string.registration_email_title), onReturnToLogin)
+        ScreenHeader(
+            stringResource(
+                if (address ==
+                    null
+                ) {
+                    R.string.registration_title
+                } else {
+                    R.string.registration_email_title
+                },
+            ),
+            onReturnToLogin,
+        )
         if (address == null) {
             RegistrationFields(state, model::register)
         } else {
@@ -42,7 +56,12 @@ internal fun RegistrationScreen(service: RegistrationService, onReturnToLogin: (
 }
 
 @Composable
-private fun EmailConfirmation(address: String, state: RegistrationState, onResend: () -> Unit, onLogin: () -> Unit) {
+private fun EmailConfirmation(
+    address: String,
+    state: RegistrationState,
+    onResend: () -> Unit,
+    onLogin: () -> Unit,
+) {
     Column(
         Modifier.fillMaxWidth().padding(vertical = DejaViewSpacing.section),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -52,7 +71,12 @@ private fun EmailConfirmation(address: String, state: RegistrationState, onResen
         Text(stringResource(R.string.registration_email_sent, address), color = DejaViewColors.secondaryText, textAlign = TextAlign.Center)
         RegistrationFeedback(state)
         PrimaryButton(stringResource(R.string.auth_submit), onLogin, Modifier.fillMaxWidth())
-        SecondaryButton(stringResource(R.string.registration_resend), onResend, Modifier.fillMaxWidth(), !state.busy && state.waitSeconds == 0L)
+        SecondaryButton(
+            stringResource(R.string.registration_resend),
+            onResend,
+            Modifier.fillMaxWidth(),
+            !state.busy && state.waitSeconds == 0L,
+        )
     }
 }
 

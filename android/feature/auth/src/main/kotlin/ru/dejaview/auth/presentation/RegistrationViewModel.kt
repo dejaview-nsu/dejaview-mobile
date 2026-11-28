@@ -18,11 +18,18 @@ internal data class RegistrationState(
     val error: AppError? = null,
 )
 
-internal class RegistrationViewModel(private val service: RegistrationService) : ViewModel() {
+internal class RegistrationViewModel(
+    private val service: RegistrationService,
+) : ViewModel() {
     private val mutableState = MutableStateFlow(RegistrationState())
     val state = mutableState.asStateFlow()
 
-    fun register(username: String, email: String, birthYear: Int, password: String) {
+    fun register(
+        username: String,
+        email: String,
+        birthYear: Int,
+        password: String,
+    ) {
         val address = email.trim()
         submit(address) { service.register(username.trim(), address, birthYear, password) }
     }
@@ -32,7 +39,10 @@ internal class RegistrationViewModel(private val service: RegistrationService) :
         submit(address) { service.resend(address) }
     }
 
-    private fun submit(address: String, request: suspend () -> AppResult<Int>) {
+    private fun submit(
+        address: String,
+        request: suspend () -> AppResult<Int>,
+    ) {
         val initial = mutableState.value
         if (initial.busy || initial.waitSeconds > 0) return
         mutableState.value = initial.copy(busy = true, error = null)
@@ -40,10 +50,11 @@ internal class RegistrationViewModel(private val service: RegistrationService) :
             val updated =
                 when (val result = request()) {
                     is AppResult.Success -> RegistrationState(confirmedAddress = address, waitSeconds = result.value.toLong())
-                    is AppResult.Failure -> initial.copy(
-                        error = result.error,
-                        waitSeconds = (result.error as? AppError.RateLimit)?.retryAfterSeconds ?: 0,
-                    )
+                    is AppResult.Failure ->
+                        initial.copy(
+                            error = result.error,
+                            waitSeconds = (result.error as? AppError.RateLimit)?.retryAfterSeconds ?: 0,
+                        )
                 }
             mutableState.value = updated
             while (mutableState.value.waitSeconds > 0) {
