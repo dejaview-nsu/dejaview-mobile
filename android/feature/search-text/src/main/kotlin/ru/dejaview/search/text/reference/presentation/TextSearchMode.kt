@@ -47,7 +47,7 @@ internal class TextSearchMode
             val state by model.state.collectAsStateWithLifecycle()
             val callback by rememberUpdatedState(onCompleted)
             val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-            val cancel = { model.onAction(ReferenceSearchAction.Cancel) }
+            val cancel = model::cancelSearch
             BackHandler(enabled = state.status == SearchStatus.Loading, onBack = cancel)
             LifecycleResumeEffect(model) {
                 onPauseOrDispose {

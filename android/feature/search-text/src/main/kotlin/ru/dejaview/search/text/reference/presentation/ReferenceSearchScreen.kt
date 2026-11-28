@@ -28,7 +28,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import ru.dejaview.core.ui.components.ContentFeedback
 import ru.dejaview.core.ui.components.DejaViewTextField
 import ru.dejaview.core.ui.components.FeedbackKind
-import ru.dejaview.core.ui.components.MovieCard
 import ru.dejaview.core.ui.components.PrimaryButton
 import ru.dejaview.core.ui.components.SearchLoadingScreen
 import ru.dejaview.core.ui.theme.DejaViewColors
@@ -76,16 +75,13 @@ internal fun ReferenceSearchScreen(
         ) {
             SearchHeading()
             DescriptionField(state, onValueChange = { onAction(ReferenceSearchAction.Edit(it)) })
-            SearchFeedback(state.status, onAction)
         }
-        if (state.status == SearchStatus.Editing || state.status is SearchStatus.Results) {
-            PrimaryButton(
-                text = stringResource(R.string.reference_search_submit),
-                onClick = submit,
-                modifier = Modifier.fillMaxWidth().padding(vertical = DejaViewSpacing.small),
-                enabled = state.canSubmit,
-            )
-        }
+        PrimaryButton(
+            text = stringResource(R.string.reference_search_submit),
+            onClick = submit,
+            modifier = Modifier.fillMaxWidth().padding(vertical = DejaViewSpacing.small),
+            enabled = state.canSubmit,
+        )
     }
 }
 
@@ -150,10 +146,8 @@ private fun SearchFeedback(
     secondaryAction: (@Composable () -> Unit)? = null,
 ) {
     val retry = { onAction(ReferenceSearchAction.Submit) }
-    val edit = { onAction(ReferenceSearchAction.Cancel) }
     when (status) {
         SearchStatus.Editing, SearchStatus.Loading -> Unit
-        SearchStatus.Empty -> ContentFeedback(FeedbackKind.Empty, onAction = edit)
         SearchStatus.Offline -> ContentFeedback(FeedbackKind.Offline, modifier, onAction = retry, secondaryAction = secondaryAction)
         SearchStatus.Failed -> ContentFeedback(FeedbackKind.Error, modifier, onAction = retry, secondaryAction = secondaryAction)
         is SearchStatus.RateLimited ->
@@ -167,9 +161,5 @@ private fun SearchFeedback(
                 onAction = retry,
                 secondaryAction = secondaryAction,
             )
-        is SearchStatus.Results ->
-            status.movies.forEachIndexed { index, movie ->
-                MovieCard(movie = movie, highlighted = index == 0)
-            }
     }
 }

@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
-import ru.dejaview.model.MovieSummary
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
 import ru.dejaview.search.text.reference.domain.ReferenceSearch
@@ -37,8 +36,6 @@ internal sealed interface SearchStatus {
 
     data object Loading : SearchStatus
 
-    data object Empty : SearchStatus
-
     data object Offline : SearchStatus
 
     data object Failed : SearchStatus
@@ -47,9 +44,6 @@ internal sealed interface SearchStatus {
         val retryAfterSeconds: Long?,
     ) : SearchStatus
 
-    data class Results(
-        val movies: List<MovieSummary>,
-    ) : SearchStatus
 }
 
 internal sealed interface ReferenceSearchAction {
@@ -72,7 +66,7 @@ internal class ReferenceSearchViewModel(
 
     fun onAction(
         action: ReferenceSearchAction,
-        onCompleted: ((SearchCompletion) -> Unit)? = null,
+        onCompleted: (SearchCompletion) -> Unit,
     ) {
         when (action) {
             is ReferenceSearchAction.Edit -> edit(action.query)
@@ -88,37 +82,35 @@ internal class ReferenceSearchViewModel(
         mutableState.value = ReferenceSearchState(query = query)
     }
 
-    private fun cancelSearch() {
+    fun cancelSearch() {
         request?.cancel()
         mutableState.value = mutableState.value.copy(status = SearchStatus.Editing)
     }
 
-    private fun submit(onCompleted: ((SearchCompletion) -> Unit)?) {
+    private fun submit(onCompleted: (SearchCompletion) -> Unit) {
         val submitted = mutableState.value
         if (!submitted.canSubmit) return
         mutableState.value = submitted.copy(status = SearchStatus.Loading)
+        val requestId = UUID.randomUUID().toString()
         request =
             viewModelScope.launch {
                 val query = submitted.query.trimQuery()
                 val result = search.search(query)
                 ensureActive()
-                if (result is AppResult.Success && onCompleted != null) {
-                    mutableState.value = submitted
-                    onCompleted(SearchCompletion(UUID.randomUUID().toString(), SearchMode.TEXT, result.value, query, Instant.now()))
-                } else {
-                    mutableState.value = submitted.copy(status = result.toSearchStatus())
+                when (result) {
+                    is AppResult.Success -> {
+                        mutableState.value = submitted.copy(status = SearchStatus.Editing)
+                        onCompleted(SearchCompletion(requestId, SearchMode.TEXT, result.value, query, Instant.now()))
+                    }
+                    is AppResult.Failure -> mutableState.value = submitted.copy(status = result.error.toSearchStatus())
                 }
             }
     }
 
-    private fun AppResult<List<MovieSummary>>.toSearchStatus(): SearchStatus =
+    private fun AppError.toSearchStatus(): SearchStatus =
         when (this) {
-            is AppResult.Success -> if (value.isEmpty()) SearchStatus.Empty else SearchStatus.Results(value)
-            is AppResult.Failure ->
-                when (val cause = error) {
-                    is AppError.Offline -> SearchStatus.Offline
-                    is AppError.RateLimit -> SearchStatus.RateLimited(cause.retryAfterSeconds)
-                    else -> SearchStatus.Failed
-                }
+            is AppError.Offline -> SearchStatus.Offline
+            is AppError.RateLimit -> SearchStatus.RateLimited(retryAfterSeconds)
+            else -> SearchStatus.Failed
         }
 }
