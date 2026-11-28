@@ -4,9 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.dejaview.contracts.AppError
 import ru.dejaview.contracts.AppResult
@@ -26,9 +28,11 @@ private const val DRAFT_KEY = "reference-search-query"
 internal data class TextSearchState(
     val query: String = "",
     val status: SearchStatus = SearchStatus.Editing,
+    val retryInSeconds: Long = 0,
 ) {
     val characterCount: Int get() = query.trimQuery().queryLength()
-    val canSubmit: Boolean get() = characterCount in MIN_QUERY_LENGTH..MAX_QUERY_LENGTH && status != SearchStatus.Loading
+    val canSubmit: Boolean
+        get() = characterCount in MIN_QUERY_LENGTH..MAX_QUERY_LENGTH && status != SearchStatus.Loading && retryInSeconds == 0L
 }
 
 internal sealed interface SearchStatus {
@@ -101,9 +105,18 @@ internal class TextSearchViewModel(
                         mutableState.value = submitted.copy(status = SearchStatus.Editing)
                         onCompleted(SearchCompletion(requestId, SearchMode.TEXT, result.value, query, Instant.now()))
                     }
-                    is AppResult.Failure -> mutableState.value = submitted.copy(status = result.error.toSearchStatus())
+                    is AppResult.Failure -> showFailure(submitted, result.error)
                 }
             }
+    }
+
+    private suspend fun showFailure(submitted: TextSearchState, error: AppError) {
+        val wait = (error as? AppError.RateLimit)?.retryAfterSeconds ?: 0
+        mutableState.value = submitted.copy(status = error.toSearchStatus(), retryInSeconds = wait)
+        while (mutableState.value.retryInSeconds > 0) {
+            delay(1000)
+            mutableState.update { it.copy(retryInSeconds = it.retryInSeconds - 1) }
+        }
     }
 
     private fun AppError.toSearchStatus(): SearchStatus =

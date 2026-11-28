@@ -50,7 +50,7 @@ internal fun TextSearchScreen(
         return
     }
     if (state.status == SearchStatus.Offline || state.status == SearchStatus.Failed || state.status is SearchStatus.RateLimited) {
-        TextSearchFailure(state.status, retry = { onAction(TextSearchAction.Submit) }, onBack, modifier)
+        TextSearchFailure(state, retry = { onAction(TextSearchAction.Submit) }, onBack, modifier)
         return
     }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -137,13 +137,13 @@ private fun DescriptionField(
 
 @Composable
 private fun TextSearchFailure(
-    status: SearchStatus,
+    state: TextSearchState,
     retry: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier,
 ) {
     val header = stringResource(R.string.text_search_title)
-    when (status) {
+    when (state.status) {
         SearchStatus.Editing, SearchStatus.Loading -> Unit
         SearchStatus.Offline -> SearchStatusPage(FeedbackKind.Offline, header, retry, onBack, modifier)
         SearchStatus.Failed -> SearchStatusPage(FeedbackKind.Error, header, retry, onBack, modifier)
@@ -154,9 +154,10 @@ private fun TextSearchFailure(
                 retry,
                 onBack,
                 modifier,
+                primaryEnabled = state.canSubmit,
                 title = stringResource(R.string.text_search_rate_limit),
                 message =
-                    status.retryAfterSeconds?.let { stringResource(R.string.text_search_retry_after, it) }
+                    state.retryInSeconds.takeIf { it > 0 }?.let { stringResource(R.string.text_search_retry_after, it) }
                         ?: stringResource(R.string.text_search_retry_later),
             )
     }
