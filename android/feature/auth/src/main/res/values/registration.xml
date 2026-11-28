@@ -1,0 +1,19 @@
+<resources>
+    <string name="registration_title">Регистрация</string>
+    <string name="registration_intro">Создайте аккаунт, чтобы искать по кадру, видео и звуку и сохранять фильмы.</string>
+    <string name="registration_username">Имя пользователя</string>
+    <string name="registration_email">Электронная почта</string>
+    <string name="registration_year">Год рождения</string>
+    <string name="registration_repeat">Повторите пароль</string>
+    <string name="registration_mismatch">Пароли не совпадают.</string>
+    <string name="registration_password_hint">От 8 символов, заглавная и строчная латинские буквы, цифра и специальный символ.</string>
+    <string name="registration_submit">Создать аккаунт</string>
+    <string name="registration_invalid">Проверьте данные формы и требования к паролю.</string>
+    <string name="registration_email_taken">Этот email уже используется.</string>
+    <string name="registration_name_taken">Это имя пользователя занято.</string>
+    <string name="registration_failure">Не удалось завершить запрос. Попробуйте ещё раз.</string>
+    <string name="registration_email_title">Подтверждение почты</string>
+    <string name="registration_check_mail">Проверьте почту</string>
+    <string name="registration_email_sent">На адрес %1$s отправлено письмо. Перейдите по ссылке в письме, чтобы завершить регистрацию.</string>
+    <string name="registration_resend">Отправить повторно</string>
+</resources>
