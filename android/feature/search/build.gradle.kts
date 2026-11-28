@@ -11,6 +11,8 @@ dependencies {
     implementation(project(":feature:search-api"))
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.compose.material3)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
 }
