@@ -9,9 +9,8 @@ plugins {
 
 dependencies {
     implementation(project(":feature:search-api"))
-    val demoImplementation by configurations
-    demoImplementation(libs.lifecycle.runtime.compose)
-    demoImplementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
     val testDemoImplementation by configurations
     testDemoImplementation(libs.junit)
     testDemoImplementation(libs.coroutines.test)
