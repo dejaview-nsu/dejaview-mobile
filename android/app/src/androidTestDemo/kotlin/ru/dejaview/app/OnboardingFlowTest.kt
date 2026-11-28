@@ -22,7 +22,7 @@ class OnboardingFlowTest {
     fun firstLaunchOpensOnboardingAndAuthThenLaterLaunchOpensHome() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val preferences = context.getSharedPreferences(STARTUP_PREFERENCES, Context.MODE_PRIVATE)
-        preferences.edit().remove(INTRODUCTION_COMPLETED).commit()
+        preferences.edit().remove(INTRODUCTION_STARTED).commit()
         try {
             ActivityScenario.launch(MainActivity::class.java).use {
                 awaitText("Видели кусочек фильма? Найдём целиком")
@@ -41,7 +41,7 @@ class OnboardingFlowTest {
                 }
                 compose.onNodeWithText("Создать аккаунт").performScrollTo().performClick()
                 awaitText("Проверьте почту")
-                assertTrue(preferences.getBoolean(INTRODUCTION_COMPLETED, false))
+                assertTrue(preferences.getBoolean(INTRODUCTION_STARTED, false))
             }
             ActivityScenario.launch(MainActivity::class.java).use {
                 awaitText("Найди фильм по обрывку памяти")
@@ -49,7 +49,7 @@ class OnboardingFlowTest {
                 compose.onNodeWithText("Видели кусочек фильма? Найдём целиком").assertDoesNotExist()
             }
         } finally {
-            preferences.edit().putBoolean(INTRODUCTION_COMPLETED, true).commit()
+            preferences.edit().putBoolean(INTRODUCTION_STARTED, true).commit()
         }
     }
 

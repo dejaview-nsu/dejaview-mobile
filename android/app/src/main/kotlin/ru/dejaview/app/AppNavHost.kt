@@ -43,7 +43,6 @@ internal fun AppNavHost(
     controller: SessionController,
     navController: NavHostController = rememberNavController(),
     showIntroduction: Boolean = false,
-    onIntroductionCompleted: () -> Unit = {},
 ) {
     val actions = viewModel<SessionActions> { SessionActions(controller) }
     val notice by actions.notice.collectAsStateWithLifecycle()
@@ -74,7 +73,6 @@ internal fun AppNavHost(
                 composable<OnboardingRoute> { entry ->
                     OnboardingScreen {
                         if (navController.isActive(entry)) {
-                            onIntroductionCompleted()
                             navController.navigate(SearchHomeRoute) { popUpTo<OnboardingRoute> { inclusive = true } }
                             navController.navigate(LoginRoute())
                         }

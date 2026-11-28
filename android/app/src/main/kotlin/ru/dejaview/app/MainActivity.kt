@@ -30,15 +30,16 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         val preferences = getSharedPreferences(STARTUP_PREFERENCES, MODE_PRIVATE)
+        val firstLaunch = !preferences.getBoolean(INTRODUCTION_STARTED, false)
+        if (firstLaunch) preferences.edit().putBoolean(INTRODUCTION_STARTED, true).apply()
         setContent {
             DejaViewTheme {
-                val showIntroduction = rememberSaveable { !preferences.getBoolean(INTRODUCTION_COMPLETED, false) }
+                val showIntroduction = rememberSaveable { firstLaunch }
                 AppNavHost(
                     searchModes = searchModes,
                     searchServices = searchServices,
                     controller = sessions.controller,
                     showIntroduction = showIntroduction,
-                    onIntroductionCompleted = { preferences.edit().putBoolean(INTRODUCTION_COMPLETED, true).apply() },
                 )
             }
         }
@@ -46,4 +47,4 @@ class MainActivity : ComponentActivity() {
 }
 
 internal const val STARTUP_PREFERENCES = "app-startup"
-internal const val INTRODUCTION_COMPLETED = "introduction-completed"
+internal const val INTRODUCTION_STARTED = "introduction-started"
