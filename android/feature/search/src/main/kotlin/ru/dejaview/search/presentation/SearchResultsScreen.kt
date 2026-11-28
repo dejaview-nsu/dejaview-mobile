@@ -74,6 +74,7 @@ fun SearchResultsScreen(
                             movie,
                             highlighted = index == 0,
                             onClick = { onMovie(movie.movieId) },
+                            overviewMaxLines = if (completion.mode == SearchMode.TEXT) 2 else 3,
                             poster = url?.let { { ResultPoster(it) } },
                         )
                     }
