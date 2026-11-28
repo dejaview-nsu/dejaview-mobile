@@ -1,0 +1,20 @@
+<resources>
+    <string name="auth_title">Вход</string>
+    <string name="auth_login">Имя пользователя или email</string>
+    <string name="auth_password">Пароль</string>
+    <string name="auth_show">Показать</string><string name="auth_hide">Скрыть</string>
+    <string name="auth_submit">Войти</string><string name="auth_busy">Входим…</string>
+    <string name="auth_cancel">Отмена</string><string name="auth_confirm">Подтвердить</string>
+    <string name="auth_demo_challenge">Демонстрационная проверка CAPTCHA</string>
+    <string name="auth_challenge">Пройдите проверку CAPTCHA для следующей попытки.</string>
+    <string name="auth_challenge_unavailable">Страница проверки пока недоступна в мобильном приложении.</string>
+    <string name="auth_config">Адрес сервера не настроен для этой сборки.</string>
+    <string name="auth_blocked">Учётная запись заблокирована.</string>
+    <string name="auth_unconfirmed">Подтвердите email по ссылке из письма и войдите снова.</string>
+    <string name="auth_invalid">Неверное имя, email или пароль.</string>
+    <string name="auth_wait">Повтор через %1$d с</string><string name="auth_limited">Сервер временно ограничил попытки входа.</string>
+    <string name="auth_bad_login">Введите корректное имя пользователя или email.</string>
+    <string name="auth_password_required">Введите пароль.</string>
+    <string name="auth_offline">Нет связи с сервером. Проверьте подключение.</string>
+    <string name="auth_failure">Не удалось подтвердить вход. Попробуйте ещё раз.</string>
+</resources>

@@ -18,5 +18,7 @@ sealed interface SessionState {
         val username: String,
         val expiresAt: Instant,
         val accountScope: String,
+        val avatarUrl: String? = null,
+        val hasPassword: Boolean = false,
     ) : SessionState
 }

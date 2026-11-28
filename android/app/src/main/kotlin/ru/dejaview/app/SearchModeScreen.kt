@@ -29,6 +29,7 @@ import ru.dejaview.search.api.SearchModalityUi
 internal fun SearchHome(
     guest: Boolean,
     onLogin: () -> Unit,
+    onProfile: () -> Unit,
     onMode: (SearchMode) -> Unit,
 ) {
     Column(
@@ -43,6 +44,8 @@ internal fun SearchHome(
             Text(stringResource(R.string.app_name), style = DejaViewType.title)
             if (guest) {
                 TextButton(onClick = onLogin) { Text(stringResource(R.string.search_login)) }
+            } else {
+                TextButton(onClick = onProfile) { Text(stringResource(R.string.profile_placeholder)) }
             }
         }
         Text(

@@ -2,16 +2,6 @@ package ru.dejaview.search.presentation
 
 import ru.dejaview.model.RequestId
 import ru.dejaview.model.SearchCompletion
-import ru.dejaview.navigation.SearchRoute
-import java.util.UUID
-
-internal class PendingActionStore {
-    private val actions = mutableMapOf<String, SearchRoute>()
-
-    fun put(route: SearchRoute): String = UUID.randomUUID().toString().also { actions[it] = route }
-
-    fun take(id: String?): SearchRoute? = actions.remove(id)
-}
 
 internal class SearchResultStore {
     private val seenRequests = mutableSetOf<RequestId>()

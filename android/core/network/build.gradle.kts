@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    api(libs.okhttp)
+    implementation(libs.serialization.json)
     implementation(project(":core:contracts"))
     implementation(project(":core:model"))
 }

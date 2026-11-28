@@ -37,7 +37,7 @@ Dev 1 согласует `AppResult<T> = Success<T> | Failure(AppError)`; Dev 2 
 interface SessionReader {
     val state: StateFlow<SessionState>
 }
-// Initializing, Guest, Expired, Authenticated(username, expiresAt, accountScope)
+// Initializing, Guest, Expired, Authenticated(username, expiresAt, accountScope, avatarUrl, hasPassword)
 interface SessionController {
     suspend fun restore(): AppResult<Unit>
     suspend fun logout(): AppResult<Unit>
@@ -47,6 +47,8 @@ interface SessionController {
 Fake допускает явно выбранное состояние и управляемое истечение срока. В prod восстановление начинается с Initializing, читает cookie и проверяет `/auth/session`; ошибка сети не должна ошибочно подтверждать действующую авторизацию. Cookie `dv_session` хранится с host/domain, path, secure и expires; не прикладывается к TMDB, сторонним картинкам или произвольным URL. Выход очищает локальную сессию даже при недоступном сервере и сообщает, если удалённый logout не подтверждён. Уже отправленные запросы старого session generation не могут восстановить cookie после выхода.
 
 `SessionInfo` 1.4.1 не содержит стабильного `user_id`. Для MVP локальный `accountScope` — случайный namespace **одного входа**. При logout/истечении истории этого namespace очищаются; после нового входа создаётся новый. При обычном перезапуске с действующей сессией namespace сохраняется. Это сознательное упрощение: история не переживает повторный вход. Для устойчивой истории нескольких аккаунтов нужен согласованный стабильный ID, нельзя использовать изменяемый username как надёжный ключ.
+
+В коде Dev 4 защищённый запрос проходит через `BackendClient.sendProtected`. Хранилище отдаёт cookie для конкретного HTTPS URI вместе с поколением сессии. Ответ 401 инвалидирует только это поколение. Для входа cookie сначала остаётся в памяти до проверки через `GET /auth/session`, затем хранилище сохраняет её вместе с namespace и публикует состояние. В тестах потребителей `core/testing` предоставляет `FakeSession` с управляемыми состояниями и истечением.
 
 В D1-03 приложение принимает опциональные Hilt-привязки `SessionReader` и `HistoryRepository`. Когда модули владельцев регистрируют интерфейсы, оболочка использует их автоматически. Dev 4 регистрирует `LoginUi` из `core/ui` вместе с `SessionReader`. Экран сообщает об отмене через callback и обновляет сессию при входе. После изменения сессии на `Authenticated` оболочка выполняет ожидающее действие.
 

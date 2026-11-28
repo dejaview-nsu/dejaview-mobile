@@ -1,0 +1,19 @@
+<resources>
+    <string name="audio_title">Поиск по аудио</string>
+    <string name="audio_formats">MP3, WAV, OGG или M4A · до 10 секунд и 20 МиБ</string>
+    <string name="audio_pick">Выбрать файл</string><string name="audio_record">Записать звук</string>
+    <string name="audio_draft">%1$s · %2$.1f с · %3$.1f КиБ</string><string name="audio_play">Прослушать</string>
+    <string name="audio_stop_play">Остановить воспроизведение</string><string name="audio_stop_record">Завершить запись</string>
+    <string name="audio_delete">Удалить фрагмент</string><string name="audio_submit">Найти фильм</string>
+    <string name="audio_upload">Отправлено %1$d из %2$d байт</string><string name="audio_processing">Ищем совпадение…</string>
+    <string name="audio_import">Проверяем файл…</string><string name="audio_cancel">Отменить</string>
+    <string name="audio_denied">Для записи нужен доступ к микрофону. Вы можете выбрать готовый файл.</string>
+    <string name="audio_settings">Открыть настройки приложения</string>
+    <string name="audio_large">Размер файла превышает 20 МиБ.</string><string name="audio_long">Фрагмент длиннее 10 секунд.</string>
+    <string name="audio_format">Выберите аудиофайл MP3, WAV, OGG или M4A.</string>
+    <string name="audio_mic_error">Запись не удалась. Проверьте доступность микрофона.</string>
+    <string name="audio_play_error">Не удалось воспроизвести фрагмент.</string><string name="audio_invalid">Файл недоступен или повреждён.</string>
+    <string name="audio_offline">Нет связи с сервером. Можно повторить отправку.</string>
+    <string name="audio_unavailable">Сервис поиска временно недоступен.</string><string name="audio_expired">Для поиска войдите снова.</string>
+    <string name="audio_failure">Не удалось завершить поиск. Попробуйте ещё раз.</string>
+</resources>

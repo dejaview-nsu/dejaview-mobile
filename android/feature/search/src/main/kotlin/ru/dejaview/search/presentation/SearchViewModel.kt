@@ -10,6 +10,8 @@ import ru.dejaview.contracts.session.SessionState
 import ru.dejaview.model.RequestId
 import ru.dejaview.model.SearchCompletion
 import ru.dejaview.model.SearchMode
+import ru.dejaview.navigation.PendingAction
+import ru.dejaview.navigation.PendingActionStore
 import ru.dejaview.navigation.SearchRoute
 
 class SearchViewModel(
@@ -23,12 +25,16 @@ class SearchViewModel(
 
     fun canOpen(mode: SearchMode): Boolean = mode == SearchMode.TEXT || session.value is SessionState.Authenticated
 
-    fun requestLogin(route: SearchRoute): String? = if (canOpen(route.mode)) null else pendingActions.put(route)
+    fun requestLogin(route: SearchRoute): String? =
+        if (canOpen(route.mode)) null else pendingActions.expect(PendingAction.OpenMode(route.mode, route.draftId))
 
-    fun finishLogin(actionId: String?): SearchRoute? = pendingActions.take(actionId)?.takeIf { canOpen(it.mode) }
+    fun finishLogin(actionId: String?): SearchRoute? {
+        val action = pendingActions.consume(actionId) as? PendingAction.OpenMode ?: return null
+        return SearchRoute(action.mode, action.draftId).takeIf { canOpen(it.mode) }
+    }
 
     fun cancelLogin(actionId: String?) {
-        pendingActions.take(actionId)
+        pendingActions.consume(actionId)
     }
 
     fun complete(

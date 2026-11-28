@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -33,9 +34,9 @@ class AppNavHostTest {
 
     @Before
     fun beginWithoutAnActiveSession() {
-        compose.runOnIdle {
-            compose.activity.searchServices.defaults
-                .expire()
+        runBlocking {
+            compose.activity.sessions.controller
+                .logout()
         }
     }
 
@@ -62,6 +63,7 @@ class AppNavHostTest {
                     AppNavHost(
                         searchModes = emptyMap(),
                         searchServices = compose.activity.searchServices,
+                        controller = compose.activity.sessions.controller,
                         navController = navController,
                     )
                 }
@@ -72,7 +74,7 @@ class AppNavHostTest {
         navigateTo(SearchRoute(SearchMode.IMAGE, "draft/?#Ю"), R.string.search_login_required)
         navigateTo(ResultsRoute("request/?#Ю"), ru.dejaview.feature.search.R.string.search_result_unavailable)
         navigateTo(MovieRoute(Long.MAX_VALUE), R.string.movie_placeholder)
-        navigateTo(LoginRoute("action/?#Ю"), R.string.search_login_required)
+        navigateTo(LoginRoute("action/?#Ю"), ru.dejaview.feature.auth.R.string.auth_title)
         navigateTo(LibraryRoute(MovieList.WATCHED), R.string.library_placeholder)
         navigateTo(ProfileRoute, R.string.profile_placeholder)
         navigateTo(HistoryRoute, R.string.history_placeholder)
@@ -99,7 +101,7 @@ class AppNavHostTest {
     @Test
     fun cancellingProtectedModeLoginReturnsToTheModePicker() {
         compose.onNodeWithText("Кадр").performClick()
-        assertScreen(R.string.search_login_required)
+        assertScreen(ru.dejaview.feature.auth.R.string.auth_title)
         compose.onNodeWithText("Отмена").performClick()
         assertStartScreen()
     }

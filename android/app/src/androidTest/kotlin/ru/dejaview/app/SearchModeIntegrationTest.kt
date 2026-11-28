@@ -39,7 +39,7 @@ class SearchModeIntegrationTest {
             val services = SearchServices(Optional.of(session), Optional.empty(), compose.activity.searchServices.defaults)
             compose.activity.setContent {
                 DejaViewTheme {
-                    AppNavHost(mapOf(SearchMode.VIDEO to VideoEntrypoint), services)
+                    AppNavHost(mapOf(SearchMode.VIDEO to VideoEntrypoint), services, compose.activity.sessions.controller)
                 }
             }
         }

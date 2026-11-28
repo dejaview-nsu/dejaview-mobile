@@ -20,6 +20,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var searchServices: SearchServices
 
+    @Inject lateinit var sessions: SessionServices
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -28,7 +30,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             DejaViewTheme {
-                AppNavHost(searchModes = searchModes, searchServices = searchServices)
+                AppNavHost(searchModes = searchModes, searchServices = searchServices, controller = sessions.controller)
             }
         }
     }

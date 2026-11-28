@@ -6,16 +6,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import ru.dejaview.contracts.session.SessionController
 import ru.dejaview.contracts.session.SessionState
 import ru.dejaview.core.ui.theme.DejaViewSpacing
 import ru.dejaview.model.SearchMode
@@ -33,8 +36,11 @@ import ru.dejaview.search.api.SearchModalityUi
 internal fun AppNavHost(
     searchModes: Map<SearchMode, SearchModalityUi>,
     searchServices: SearchServices,
+    controller: SessionController,
     navController: NavHostController = rememberNavController(),
 ) {
+    val actions = viewModel<SessionActions> { SessionActions(controller) }
+    val notice by actions.notice.collectAsStateWithLifecycle()
     Scaffold { insets ->
         Column(
             Modifier
@@ -46,12 +52,17 @@ internal fun AppNavHost(
             val badge = stringResource(R.string.demo_badge)
             if (badge.isNotEmpty()) Text(badge)
 
+            notice?.let {
+                Text(stringResource(it))
+                TextButton(onClick = actions::dismiss) { Text(stringResource(R.string.notice_close)) }
+            }
             NavHost(navController = navController, startDestination = SearchHomeRoute) {
                 composable<SearchHomeRoute> { entry ->
                     val vm = searchViewModel(searchServices, navController, entry)
                     val session by vm.session.collectAsStateWithLifecycle()
                     SearchHome(
                         guest = session == SessionState.Guest || session == SessionState.Expired,
+                        onProfile = { if (navController.isActive(entry)) navController.navigate(ProfileRoute) },
                         onLogin = {
                             if (navController.isActive(entry)) navController.navigate(LoginRoute())
                         },
@@ -74,7 +85,17 @@ internal fun AppNavHost(
                     SearchLoginDestination(navController, entry, entry.toRoute(), vm, searchServices)
                 }
                 composable<LibraryRoute> { Text(stringResource(R.string.library_placeholder)) }
-                composable<ProfileRoute> { Text(stringResource(R.string.profile_placeholder)) }
+                composable<ProfileRoute> {
+                    val session by searchServices.session.state.collectAsStateWithLifecycle()
+                    Text(stringResource(R.string.profile_placeholder))
+                    (session as? SessionState.Authenticated)?.let { account ->
+                        Text(account.username)
+                        TextButton(onClick = {
+                            actions.logout()
+                            navController.popBackStack<SearchHomeRoute>(inclusive = false)
+                        }) { Text(stringResource(R.string.logout)) }
+                    }
+                }
                 composable<HistoryRoute> { Text(stringResource(R.string.history_placeholder)) }
             }
         }

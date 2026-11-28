@@ -1,4 +1,7 @@
 <resources>
+    <string name="logout">Выйти</string>
+    <string name="logout_unconfirmed">Вы вышли на устройстве. Сервер не подтвердил завершение сессии.</string>
+    <string name="notice_close">Закрыть</string>
     <string name="app_name" translatable="false">DejaView</string>
     <string name="search_mode_unavailable">Этот режим поиска пока недоступен</string>
     <string name="movie_placeholder">Карточка фильма</string>

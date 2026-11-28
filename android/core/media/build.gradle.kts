@@ -4,6 +4,11 @@ plugins {
 }
 
 dependencies {
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.runner)
+    testImplementation(libs.junit)
     implementation(project(":core:contracts"))
     implementation(project(":core:model"))
 }
+
+android.defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -4,6 +4,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":core:model"))
     api(libs.coroutines.core)
+    api(project(":core:model"))
 }
