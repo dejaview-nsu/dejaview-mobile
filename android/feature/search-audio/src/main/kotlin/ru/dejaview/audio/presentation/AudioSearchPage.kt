@@ -31,8 +31,7 @@ internal fun AudioSearchPage(
 
 @Composable
 private fun AudioProgress(state: AudioState, onCancel: () -> Unit, modifier: Modifier) {
-    val bytes = state.draft?.byteCount
-    val uploading = state.phase == AudioPhase.Uploading && bytes != null && bytes > 0
+    val uploadSize = state.draft?.byteCount?.takeIf { state.phase == AudioPhase.Uploading && it > 0 }
     val title =
         when (state.phase) {
             AudioPhase.Importing -> R.string.audio_import
@@ -43,8 +42,8 @@ private fun AudioProgress(state: AudioState, onCancel: () -> Unit, modifier: Mod
         onCancel,
         modifier,
         title = stringResource(title),
-        progress = if (uploading && bytes != null) (state.sent.toFloat() / bytes).coerceIn(0f, 1f) else null,
-        detail = if (uploading) stringResource(R.string.audio_upload, state.sent, bytes ?: 0) else null,
+        progress = uploadSize?.let { (state.sent.toFloat() / it).coerceIn(0f, 1f) },
+        detail = uploadSize?.let { stringResource(R.string.audio_upload, state.sent, it) },
         header = stringResource(R.string.audio_title),
     )
 }
