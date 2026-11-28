@@ -18,6 +18,13 @@ class RoutesTest {
     }
 
     @Test
+    fun searchAccessRoutePreservesTheRequestedMode() {
+        for (mode in SearchMode.entries) {
+            assertRoundTrip(SearchAccessRoute(mode))
+        }
+    }
+
+    @Test
     fun loginRoutePreservesOptionalPendingAction() {
         assertRoundTrip(LoginRoute())
         assertRoundTrip(LoginRoute("action /?# Ю"))
@@ -40,11 +47,16 @@ class RoutesTest {
     fun routesWithoutArgumentsRoundTrip() {
         assertRoundTrip(ProfileRoute)
         assertRoundTrip(HistoryRoute)
+        assertRoundTrip(SearchHomeRoute)
+        assertRoundTrip(OpeningRoute)
+        assertRoundTrip(OnboardingRoute)
+        assertRoundTrip(RegistrationRoute)
     }
 
     @Test
     fun routesRejectMissingRequiredArguments() {
         assertThrows(SerializationException::class.java) { Json.decodeFromString<SearchRoute>("{}") }
+        assertThrows(SerializationException::class.java) { Json.decodeFromString<SearchAccessRoute>("{}") }
         assertThrows(SerializationException::class.java) { Json.decodeFromString<ResultsRoute>("{}") }
         assertThrows(SerializationException::class.java) { Json.decodeFromString<MovieRoute>("{}") }
         assertThrows(SerializationException::class.java) { Json.decodeFromString<LibraryRoute>("{}") }
