@@ -20,7 +20,10 @@ import ru.dejaview.feature.auth.R
 import java.time.Year
 
 @Composable
-internal fun RegistrationFields(state: RegistrationState, onSubmit: (String, String, Int, String) -> Unit) {
+internal fun RegistrationFields(
+    state: RegistrationState,
+    onSubmit: (String, String, Int, String) -> Unit,
+) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var birthYear by remember { mutableStateOf("") }
@@ -34,21 +37,35 @@ internal fun RegistrationFields(state: RegistrationState, onSubmit: (String, Str
     Text(stringResource(R.string.registration_intro), color = DejaViewColors.secondaryText, style = DejaViewType.body)
     DejaViewTextField(username, { username = it }, stringResource(R.string.registration_username), enabled = enabled)
     DejaViewTextField(
-        email, { email = it }, stringResource(R.string.registration_email), enabled = enabled,
+        email,
+        { email = it },
+        stringResource(R.string.registration_email),
+        enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
     )
     DejaViewTextField(
-        birthYear, { birthYear = it.filter(Char::isDigit).take(4) }, stringResource(R.string.registration_year),
-        enabled = enabled, isError = birthYear.length == 4 && !yearValid,
+        birthYear,
+        { birthYear = it.filter(Char::isDigit).take(4) },
+        stringResource(R.string.registration_year),
+        enabled = enabled,
+        isError = birthYear.length == 4 && !yearValid,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
     )
     DejaViewTextField(
-        password, { password = it }, stringResource(R.string.auth_password), enabled = enabled,
-        visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        password,
+        { password = it },
+        stringResource(R.string.auth_password),
+        enabled = enabled,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
     DejaViewTextField(
-        repeatPassword, { repeatPassword = it }, stringResource(R.string.registration_repeat), enabled = enabled,
-        isError = mismatched, visualTransformation = PasswordVisualTransformation(),
+        repeatPassword,
+        { repeatPassword = it },
+        stringResource(R.string.registration_repeat),
+        enabled = enabled,
+        isError = mismatched,
+        visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
     if (mismatched) Text(stringResource(R.string.registration_mismatch), color = DejaViewColors.error)
