@@ -144,8 +144,14 @@ class TextSearchTest {
             assertEquals(SearchStatus.Failed, vm.state.value.status)
 
             vm.submit()
+            runCurrent()
+            assertEquals(12L, vm.state.value.retryInSeconds)
+            assertFalse(vm.state.value.canSubmit)
+            vm.submit()
+            runCurrent()
             advanceUntilIdle()
             assertEquals(SearchStatus.RateLimited(12), vm.state.value.status)
+            assertTrue(vm.state.value.canSubmit)
             assertEquals(List(3) { "космос" }, requests)
         }
 
