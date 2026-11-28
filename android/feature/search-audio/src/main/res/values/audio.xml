@@ -1,4 +1,5 @@
 <resources>
+    <string name="audio_sending">Отправляем фрагмент</string>
     <string name="audio_retry">Повторить</string>
     <string name="audio_retry_after">Повторите поиск через %1$d с.</string>
     <string name="audio_preview_ready">Фрагмент готов</string>
